@@ -97,12 +97,16 @@ public class Utils {
     public static HashMap<String,String> mLanguages = new HashMap<String,String>();
     public static HashMap<String,Integer> mLanguageIndexes = new HashMap<String,Integer>();
     public static ArrayList<String> mAppNames = new ArrayList<String>();
+    public static ArrayList<String> mStringFileNames = new ArrayList<String>();
 
     /*
      * init languages titile name and index
      * mLanguages size must equal mLanguageIndexes size
      */
     static{
+        mStringFileNames.add(STRING_FILE_NAME);
+        mStringFileNames.add("audio.xml");
+
         mLanguages.put("values", "英语|en");
         mLanguages.put("values-zh-rCN", "中文|zh-rCN");
         mLanguages.put("values-ru", "俄语|ru");
@@ -401,11 +405,15 @@ public class Utils {
                 }
             }
         } else {
-            if (path.endsWith("values"+"/"+Utils.STRING_FILE_NAME)) {
-                if(mAppNames.contains(getAppNameByStringPath(path))){
-                    stringPaths.add(path);
-                }else if(path.endsWith("res/res/values"+"/"+Utils.STRING_FILE_NAME)){
-                    stringPaths.add(path);
+            int size = mStringFileNames.size();
+            for (int i=0; i<size; i++) {
+                String name = mStringFileNames.get(i);
+                if (path.endsWith("values"+"/"+ name)) {
+                    if(mAppNames.contains(getAppNameByStringPath(path))){
+                        stringPaths.add(path);
+                    }else if(path.endsWith("res/res/values"+"/"+name)){
+                        stringPaths.add(path);
+                    }
                 }
             }
         }
@@ -422,10 +430,15 @@ public class Utils {
 
     private void getStringFiles(File file){
         String path = file.getAbsolutePath();
-        if(file.isFile() && path.endsWith(Utils.STRING_FILE_NAME)){
-            StringsFile stringsFile = new StringsFile(path);
-            stringsFile.doParserStringsFile();
-            stringsFile.writeToExcel(Utils.XLS_PATH);
+        if(file.isFile()){
+            int size = mStringFileNames.size();
+            for (int i=0; i<size; i++) {
+                if (path.endsWith(mStringFileNames.get(i))) {
+                    StringsFile stringsFile = new StringsFile(path);
+                    stringsFile.doParserStringsFile();
+                    stringsFile.writeToExcel(Utils.XLS_PATH);
+                }
+            }
         }else if(file.isDirectory()){
             File[] files = file.listFiles();
             for(int i=0;i<files.length;i++){
@@ -650,8 +663,9 @@ public class Utils {
                 + " will create a xxx.xls at xls direcotry according the path of user input!");
         Utils.loge("");
         Utils.loge("       path is the app dir (absolute path) which contains strings.xml or strings.xml");
-        Utils.loge("       params is Optional -a or -t ");
-        Utils.loge("       params -a is stand for the path is android root path");
+        Utils.loge("       params is Optional -a or -t  or -a -t");
+        Utils.loge("       no params find all strings.xml on path");
+        Utils.loge("       params -a is stand for the path is android root path : only find strings.xml on packages/apps, frameworks/base/core/res/res, frameworks/packages/SystemUI");
         Utils.loge("       params -t is stand for include all strings of strings.xml(include translatable=false)");
         Utils.loge("");
         Utils.loge("");

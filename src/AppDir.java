@@ -96,10 +96,13 @@ public class AppDir {
     public void doParserStringDir(File file) {
         String dirPath = file.getAbsolutePath();
         if (dirPath.contains(Utils.VALUES)) {
-            File stringFile = new File(file.getAbsolutePath(), Utils.STRING_FILE_NAME);
-            if (stringFile.exists()) {
-                StringsFile strFile = new StringsFile(stringFile.getAbsolutePath(), this);
-                strFile.doParserStringsFile();
+            int size = Utils.mStringFileNames.size(); 
+            for (int i=0; i<size; i++) {
+                File stringFile = new File(file.getAbsolutePath(), Utils.mStringFileNames.get(i));
+                if (stringFile.exists()) {
+                    StringsFile strFile = new StringsFile(stringFile.getAbsolutePath(), this);
+                    strFile.doParserStringsFile();
+                }
             }
         }
     }
@@ -107,7 +110,11 @@ public class AppDir {
     public void addStringFile(StringsFile strFile) {
         String key = strFile.getDirName();
         if (key != null && !key.equals("")) {
-            mStringFiles.put(key, strFile);
+            if (!mStringFiles.containsKey(key)){
+                mStringFiles.put(key, strFile);
+            } else {
+                mStringFiles.get(key).addStrings(strFile.getAllStrs());
+            }
         }
     }
 
