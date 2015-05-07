@@ -44,7 +44,7 @@
         <item>VideoPlayer</item>
         <item>VideoRecord</item>
     </app_name>
-    
+
     -->
 
 
@@ -67,7 +67,7 @@
         <item key="values-es" index="18">西班牙|es</item>
         <item key="values-pt" index="19">葡萄牙|pt</item>
         <item key="values-zh-rTW" index="20">繁体|zh-rTW</item>
-        <!-- 
+        <!--
         <item key="values-bg" index="21">保加利亚|bg</item>
         <item key="values-ca" index="22">加泰罗尼亚|ca</item>
         <item key="values-cs" index="23">捷克|cs</item>
