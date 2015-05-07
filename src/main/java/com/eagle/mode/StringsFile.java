@@ -1,26 +1,27 @@
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Set;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
+package main.java.com.eagle.mode;
 
+import main.java.com.eagle.Utils;
+import main.java.com.eagle.config.Config;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;
 import jxl.write.Label;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
-import jxl.write.biff.RowsExceededException;
 
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
 
 /*
  * StringsFile is mode strings.xml
@@ -37,17 +38,17 @@ public class StringsFile {
     /*
      * mAppDir is which the strings.xml belong to
      */
-    private AppDir mAppDir;
+    private App mAppDir;
 
-    public StringsFile(String path,AppDir appDir) {
+    public StringsFile(String path, App appDir) {
         mPath = path;
         mStrs = new ArrayList<StringObj>();
         mAppDir = appDir;
     }
 
-    public StringsFile(String path){
+    public StringsFile(String path) {
         mPath = path;
-        mAppDir = new AppDir("StringFile",path);
+        mAppDir = new App("StringFile", path);
     }
 
     public String getAppName() {
@@ -61,27 +62,28 @@ public class StringsFile {
         return mPath;
     }
 
-    public String getDirName(){
+    public String getDirName() {
         File file = new File(mPath);
-        if(file.exists()){
-           return file.getParentFile().getName();
+        if (file.exists()) {
+            return file.getParentFile().getName();
         }
         return mPath;
     }
 
-    public void doParserStringsFile(){
-        parserFile(this,mAppDir);
+    public void doParserStringsFile() {
+        parserFile(this, mAppDir);
     }
 
     /*
-     * just write to signal xls file
+     * just write to single xls file
      */
-    public void writeToExcel(String savePath){
+    public void writeToExcel() {
         WritableWorkbook wb = null;
         WritableSheet sheet = null;
         Workbook rwb = null;
-        File xlsFile = new File(savePath, "StringFile.xls");
-        Utils.logd("write package StringFile "  + " to excel path : " + xlsFile.getAbsolutePath());
+        String savePath = Config.getInstance().getCommand().getOutputPath();
+        File xlsFile = new File(savePath, Utils.XLS_FILE_NAME);
+        Utils.logd("write package StringFile " + " to excel path : " + xlsFile.getAbsolutePath());
         try {
             if (!xlsFile.exists()) {
                 wb = Workbook.createWorkbook(xlsFile);
@@ -102,8 +104,9 @@ public class StringsFile {
                     label = new Label(Utils.ID_COLUMN_INDEX, currenRow, ids[j]);
                     sheet.addCell(label);
                     label = new Label(3, currenRow, values[j]);
-                    if(ids[j].startsWith(Utils.SURFIX_ARRAY) || ids[j].startsWith(Utils.SURFIX_PLURALS)){
-                       ids[j] = ids[j]+j; 
+                    if (ids[j].startsWith(Utils.SURFIX_ARRAY)
+                            || ids[j].startsWith(Utils.SURFIX_PLURALS)) {
+                        ids[j] = ids[j] + j;
                     }
                     sheet.addCell(label);
                     currenRow += 1;
@@ -148,16 +151,16 @@ public class StringsFile {
         mStrs = strs;
     }
 
-    public void addStrings(ArrayList<StringObj> strs){
+    public void addStrings(ArrayList<StringObj> strs) {
         mStrs.addAll(strs);
     }
 
-    private void parserFile(StringsFile strFile,AppDir appDir) {
+    private void parserFile(StringsFile strFile, App appDir) {
         SAXParserFactory saxfac = SAXParserFactory.newInstance();
         try {
             SAXParser saxparser = saxfac.newSAXParser();
             InputStream is = new FileInputStream(strFile.getPath());
-            saxparser.parse(is, new StrHandler(this, Command.getInstace(),appDir));
+            saxparser.parse(is, new StringHandler(this, appDir));
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         } catch (SAXException e) {

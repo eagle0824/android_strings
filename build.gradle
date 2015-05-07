@@ -1,0 +1,28 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+
+sourceCompatibility = 1.6
+version = '1.0'
+
+jar {
+    manifest {
+        attributes 'Implementation-Title': 'eagle',
+                   'Implementation-Version': version,
+                   'Created-By' : 'eagle',
+                   'Main-Class': 'main.java.com.eagle.Main'
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    //format  'packageName:name:version'
+    //compile 'commons-collections:commons-collections:3.2'
+    //testCompile 'junit:junit:4.+'
+}
+
+test {
+}

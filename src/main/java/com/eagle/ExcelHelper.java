@@ -1,3 +1,16 @@
+
+package main.java.com.eagle;
+
+import main.java.com.eagle.config.Config;
+import main.java.com.eagle.mode.FormatResult;
+import main.java.com.eagle.mode.StringObj;
+import main.java.com.eagle.mode.StringsFile;
+import jxl.Cell;
+import jxl.Sheet;
+import jxl.Workbook;
+import jxl.WorkbookSettings;
+import jxl.read.biff.BiffException;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -5,46 +18,38 @@ import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import jxl.*;
-import jxl.read.biff.BiffException;
+public class ExcelHelper {
 
-public class RExcel {
+    private HashMap<String, Integer> mIndex;
+    private ArrayList<String> mLanguages;
+    private ArrayList<App> mApps;
 
-    private HashMap<String, Integer> mIndex = new HashMap<String, Integer>();
-    private ArrayList<String> mLanguages = new ArrayList<String>();
-
+    private int start = -1;
+    private int end = -1;
     private int emptyRowCount = 0;
+    private String mOutputDir;
 
-    private ArrayList<App> mApps = new ArrayList<App>();
-
-    public RExcel(int start, int end) {
-        Utils.initDir(Utils.STR_PATH);
-        initAppsFromExcel(start, end);
+    public ExcelHelper(String outputDir) {
+        mIndex = new HashMap<String, Integer>();
+        mLanguages = new ArrayList<String>();
+        mApps = new ArrayList<App>();
+        mOutputDir = outputDir;
+        Utils.initDir(outputDir);
     }
 
-    private void initAppsFromExcel(int start, int end) {
-        Utils.logd("user input start : " + start + " end :" + end);
-        File curFile = new File("./");
-        File xlsFile = null;
-        if (curFile.isDirectory()) {
-            File[] files = curFile.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                if (files[i].getName().endsWith(Utils.SURFIX_XLS)) {
-                    xlsFile = files[i];
-                    break;
-                }
-            }
-        }
-        if (xlsFile == null) {
-            Utils.loge("you must put your xls file in this dir!");
-            return;
-        }
+    public void setRange(int start, int end) {
+        Utils.loge("setRange start : " + start + " end : " + end);
+        this.start = start;
+        this.end = end;
+    }
+
+    public void createXmlFromXlsFile(File xlsFile) {
         Workbook wb = null;
         try {
-            WorkbookSettings workbookSettings=new WorkbookSettings();
+            WorkbookSettings workbookSettings = new WorkbookSettings();
             workbookSettings.setEncoding(Utils.ISO_8859_1);
-            wb = Workbook.getWorkbook(xlsFile,workbookSettings);
-            //wb = Workbook.getWorkbook(xlsFile);
+            wb = Workbook.getWorkbook(xlsFile, workbookSettings);
+            // wb = Workbook.getWorkbook(xlsFile);
         } catch (BiffException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -144,7 +149,7 @@ public class RExcel {
             Utils.loge("app " + name + " can't find from xls,please check the xls name is right!");
             return;
         }
-        app.writeToFile(enStr, Utils.RW_PATH);
+        app.writeToFile(enStr, mOutputDir);
     }
 
     private int getAllReordCount() {
@@ -309,7 +314,7 @@ public class RExcel {
         }
 
         public void writeToFile(StringsFile appStr, String path) {
-            Utils.logd("write App " + mAppName + " to dir rwdata record count : "
+            Utils.logd("write App " + mAppName + " to dir " + mOutputDir + " record count : "
                     + getRecordCount());
             File appFile = new File(path, mAppName);
             Utils.initDir(appFile);
@@ -386,8 +391,9 @@ public class RExcel {
         }
 
         public void writeToFile() {
-            Utils.logd("write " + mAppName + " to dir data count : " + getRecordCount());
-            File appFile = new File(Utils.STR_PATH, mAppName);
+            Utils.logd("write " + mAppName + " to dir " + mOutputDir + " count : "
+                    + getRecordCount());
+            File appFile = new File(mOutputDir, mAppName);
             Utils.initDir(appFile);
             int len = mLanguages.size();
             StringBuilder sb = new StringBuilder();
@@ -397,7 +403,7 @@ public class RExcel {
                 if (strIndex < 0) {
                     return;
                 }
-                //Utils.logd("language is : " + language);
+                // Utils.logd("language is : " + language);
                 File fileValue = null;
                 if (language.equals("en")) {
                     fileValue = new File(appFile, Utils.VALUES);
@@ -429,7 +435,8 @@ public class RExcel {
                             sb.delete(0, sb.length());
                             hasError = true;
                         } else {
-                            if (name.startsWith(Utils.SURFIX_ARRAY)) {//parser array
+                            if (name.startsWith(Utils.SURFIX_ARRAY)) {// parser
+                                                                      // array
                                 if (!currentPlurals.equals("")) {
                                     sb.append(Utils.PLURALS_END);
                                     currentPlurals = "";
@@ -440,7 +447,7 @@ public class RExcel {
                                     sb.append(Utils.STRING_ARRAY_HEAD_PREFIX)
                                             .append(currentArrayName)
                                             .append(Utils.STRING_ARRAY_HEAD_SURFIX);
-                                }else if(!currentArrayName.equals(arrayName)){
+                                } else if (!currentArrayName.equals(arrayName)) {
                                     sb.append(Utils.STRING_ARRAY_END);
                                     currentArrayName = arrayName;
                                     sb.append(Utils.STRING_ARRAY_HEAD_PREFIX)
@@ -450,7 +457,8 @@ public class RExcel {
                                 sb.append(Utils.ITEM_PREFIX)
                                         .append(value)
                                         .append(Utils.ITEM_SUFFIX);
-                            } else if (name.startsWith(Utils.SURFIX_PLURALS)) {//parser plurals
+                            } else if (name.startsWith(Utils.SURFIX_PLURALS)) {// parser
+                                                                               // plurals
                                 if (!currentArrayName.equals("")) {
                                     sb.append(Utils.STRING_ARRAY_END);
                                     currentArrayName = "";
@@ -467,7 +475,7 @@ public class RExcel {
                                     sb.append(Utils.PLURALS_HEAD_PREFIX)
                                             .append(pluralsName)
                                             .append(Utils.PLURALS_HEAD_SURFIX);
-                                }else if(!currentPlurals.equals(pluralsName)){
+                                } else if (!currentPlurals.equals(pluralsName)) {
                                     sb.append(Utils.PLURALS_END);
                                     currentPlurals = pluralsName;
                                     sb.append(Utils.PLURALS_HEAD_PREFIX)
@@ -479,7 +487,7 @@ public class RExcel {
                                         .append(Utils.PLURALS_MIDDLE_PREFIX)
                                         .append(value)
                                         .append(Utils.PLURALS_ITEM_SUFFIX);
-                            } else {//parser normal string
+                            } else {// parser normal string
                                 if (!currentArrayName.equals("")) {
                                     sb.append(Utils.STRING_ARRAY_END);
                                     currentArrayName = "";

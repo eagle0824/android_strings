@@ -1,3 +1,6 @@
+package main.java.com.eagle.mode;
+import main.java.com.eagle.Utils;
+
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Set;
@@ -114,5 +117,4 @@ public class StringPlurals extends StringObj{
         }
         return sb.toString();
     }
-
 }

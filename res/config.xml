@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="utf-8"?>
+<config>
+    <string_file>
+        <item>strings.xml</item>
+        <item>audio.xml</item>
+    </string_file>
+    <!--
+    <app_name>
+        <item>AUX</item>
+        <item>BootLogo</item>
+        <item>Browser</item>
+        <item>BTMusic</item>
+        <item>BtPhone</item>
+        <item>Calendar2</item>
+        <item>CarDVR</item>
+        <item>CarRearView</item>
+        <item>Contacts</item>
+        <item>ContactsCommon</item>
+        <item>Dialer</item>
+        <item>DVD</item>
+        <item>Ebook</item>
+        <item>FactoryMode</item>
+        <item>FileManager</item>
+        <item>FMAM</item>
+        <item>Gallery2</item>
+        <item>GlobalTime</item>
+        <item>IPOD</item>
+        <item>InCallUI</item>
+        <item>Launcher2</item>
+        <item>Launcher3</item>
+        <item>Music</item>
+        <item>MagicLink</item>
+        <item>MagicLinkCore</item>
+        <item>Navigation</item>
+        <item>Phone</item>
+        <item>PhoneCommon</item>
+        <item>RearZone</item>
+        <item>Settings</item>
+        <item>SteeringWheel</item>
+        <item>TaskManager</item>
+        <item>tscalibration</item>
+        <item>TV</item>
+        <item>VCDC</item>
+        <item>VideoPlayer</item>
+        <item>VideoRecord</item>
+    </app_name>
+    
+    -->
+
+
+    <language>
+        <item key="values" index="2">英语|en</item>
+        <item key="values-zh-rCN" index="4">中文|zh-rCN</item>
+        <item key="values-ru" index="5">俄语|ru</item>
+        <item key="values-el" index="6">希腊语|el</item>
+        <item key="values-pl" index="7">波兰语|pl</item>
+        <item key="values-tr" index="8">土耳其语|tr</item>
+        <item key="values-ar" index="9">阿拉伯文|ar</item>
+        <item key="values-fa" index="10">波斯语|fa</item>
+        <item key="values-ro" index="11">罗马尼亚|ro</item>
+        <item key="values-fr" index="12">法语|fr</item>
+        <item key="values-hu" index="13">匈牙利语|hu</item>
+        <item key="values-it" index="14">意大利语|it</item>
+        <item key="values-th" index="15">泰语|th</item>
+        <item key="values-de" index="16">德语|de</item>
+        <item key="values-uk" index="17">乌克兰语|uk</item>
+        <item key="values-es" index="18">西班牙|es</item>
+        <item key="values-pt" index="19">葡萄牙|pt</item>
+        <item key="values-zh-rTW" index="20">繁体|zh-rTW</item>
+        <!-- 
+        <item key="values-bg" index="21">保加利亚|bg</item>
+        <item key="values-ca" index="22">加泰罗尼亚|ca</item>
+        <item key="values-cs" index="23">捷克|cs</item>
+        <item key="values-da" index="24">丹麦|da</item>
+        <item key="values-en-rGB" index="25">英语(英国)|en-rGB</item>
+        <item key="values-es-rUS" index="26">英语(美国)|en-rUS</item>
+        <item key="values-fi" index="27">芬兰文|fi</item>
+        <item key="values-hr" index="28">克罗里亚|hr</item>
+        <item key="values-in" index="29">印度尼西亚|in</item>
+        <item key="values-iw" index="30">希伯来|iw</item>
+        <item key="values-ja" index="31">日文|ja</item>
+        <item key="values-ko" index="32">韩文|ko</item>
+        <item key="values-lt" index="33">立陶宛|lt</item>
+        <item key="values-lv" index="34">拉脱维亚|lv</item>
+        <item key="values-nb" index="35">挪威博克马尔|nb</item>
+        <item key="values-nl" index="36">荷兰文|nl</item>
+        <item key="values-pt-rPT" index="37">葡萄牙(葡萄牙)|pt-rPT</item>
+        <item key="values-sk" index="38">斯洛伐克|sk</item>
+        <item key="values-sl" index="39">斯洛文尼亚|sl</item>
+        <item key="values-sr" index="40">塞尔维亚文|sr</item>
+        <item key="values-sv" index="41">瑞典文|sv</item>
+        <item key="values-tl" index="42">塔加洛语|tl</item>
+        <item key="values-vi" index="43">越南|vi</item>
+        -->
+    </language>
+    <base_dir>
+        <item>packages</item>
+        <item>frameworks/base/packages</item>
+        <item>frameworks/base/core/res</item>
+    </base_dir>
+</config>

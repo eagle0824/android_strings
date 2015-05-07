@@ -1,23 +1,28 @@
-import java.awt.Color;
+
+package main.java.com.eagle.mode;
+
+import main.java.com.eagle.Utils;
+import main.java.com.eagle.config.Config;
+import main.java.com.eagle.config.ConfigItem;
+import jxl.Workbook;
+import jxl.format.Alignment;
+import jxl.format.Colour;
+import jxl.format.UnderlineStyle;
+import jxl.format.VerticalAlignment;
+import jxl.read.biff.BiffException;
+import jxl.write.Label;
+import jxl.write.WritableCellFormat;
+import jxl.write.WritableFont;
+import jxl.write.WritableSheet;
+import jxl.write.WritableWorkbook;
+import jxl.write.WriteException;
+import jxl.write.biff.RowsExceededException;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
-
-import jxl.format.Colour;
-import jxl.format.UnderlineStyle;
-import jxl.Workbook;
-import jxl.read.biff.BiffException;
-import jxl.write.Label;
-import jxl.format.Alignment;
-import jxl.format.VerticalAlignment;
-import jxl.write.WritableSheet;
-import jxl.write.WritableWorkbook;
-import jxl.write.WriteException;
-import jxl.write.WritableFont;
-import jxl.write.WritableCellFormat;
-import jxl.write.biff.RowsExceededException;
 
 /*
  * AppDir is for app dir
@@ -33,7 +38,7 @@ import jxl.write.biff.RowsExceededException;
  *          -->string.xml
  *       ........
  */
-public class AppDir {
+public class App {
     /*
      * mStringFiles is collection sub values name and sub values dir String is
      * values-* dir name StringFile is
@@ -53,7 +58,7 @@ public class AppDir {
     private static final int CELL_APP_NAME = 2;
     private static final int CELL_SPECIAL = 3;
 
-    public AppDir(File file) {
+    public App(File file) {
         if (!file.isDirectory()) {
             Utils.loge("dir :" + file.getAbsolutePath() + " is not dir!");
             return;
@@ -63,7 +68,7 @@ public class AppDir {
         mStringFiles = new HashMap<String, StringsFile>();
     }
 
-    public AppDir(String name, String path) {
+    public App(String name, String path) {
         mPath = path;
         mAppName = name;
         mStringFiles = new HashMap<String, StringsFile>();
@@ -89,16 +94,17 @@ public class AppDir {
             }
         }
         if (mStringFiles.size() != 0) {
-            writeToExcel(this, Utils.XLS_PATH);
+            writeToExcel(this);
         }
     }
 
     public void doParserStringDir(File file) {
         String dirPath = file.getAbsolutePath();
         if (dirPath.contains(Utils.VALUES)) {
-            int size = Utils.mStringFileNames.size(); 
-            for (int i=0; i<size; i++) {
-                File stringFile = new File(file.getAbsolutePath(), Utils.mStringFileNames.get(i));
+            ArrayList<String> mStringFiles = Config.getInstance().getStringFiles();
+            int size = mStringFiles.size();
+            for (int i = 0; i < size; i++) {
+                File stringFile = new File(file.getAbsolutePath(), mStringFiles.get(i));
                 if (stringFile.exists()) {
                     StringsFile strFile = new StringsFile(stringFile.getAbsolutePath(), this);
                     strFile.doParserStringsFile();
@@ -110,7 +116,7 @@ public class AppDir {
     public void addStringFile(StringsFile strFile) {
         String key = strFile.getDirName();
         if (key != null && !key.equals("")) {
-            if (!mStringFiles.containsKey(key)){
+            if (!mStringFiles.containsKey(key)) {
                 mStringFiles.put(key, strFile);
             } else {
                 mStringFiles.get(key).addStrings(strFile.getAllStrs());
@@ -133,10 +139,11 @@ public class AppDir {
         return mPath;
     }
 
-    public void writeToExcel(AppDir appStr, String savePath) {
+    public void writeToExcel(App appStr) {
         WritableWorkbook wb = null;
         WritableSheet sheet = null;
         Workbook rwb = null;
+        String savePath = Config.getInstance().getCommand().getOutputPath();
         File xlsFile = new File(savePath, Utils.NEW_XLS_NAME);
         Utils.logd("write package " + appStr.mAppName + " to excel path : "
                 + xlsFile.getAbsolutePath());
@@ -174,7 +181,7 @@ public class AppDir {
                 }
             }
             Utils.logd("end rows is : " + sheet.getRows());
-            int endRowIndex = sheet.getRows()-1;
+            int endRowIndex = sheet.getRows() - 1;
             sheet.mergeCells(0, startRow, 0, endRowIndex);
             wb.write();
             wb.close();
@@ -200,9 +207,11 @@ public class AppDir {
         // Utils.logd("StringFile :" + strFile.getAppName() +
         // "; StringObjs count : " + size + "dir name : " +
         // strFile.getDirName());
-        if (Utils.mLanguageIndexes.get(strFile.getDirName()) == null) {
+        HashMap<String, ConfigItem> languages = Config.getInstance().getLanguages();
+        if (!languages.containsKey(strFile.getDirName())) {
             return;
         }
+        ConfigItem item = languages.get(strFile.getDirName());
         try {
             for (int i = 0; i < size; i++) {
                 String[] ids = mStrs.get(i).getAllIds();
@@ -219,11 +228,11 @@ public class AppDir {
                         Label label = new Label(Utils.ID_COLUMN_INDEX, currenRow, ids[j],
                                 mWritableCellFormat);
                         sheet.addCell(label);
-                        if(Utils.isContainSpecialCharacter(values[j])){
+                        if (Utils.isContainSpecialCharacter(values[j])) {
                             mWritableCellFormat = getCellFormat(CELL_SPECIAL);
                         }
-                        label = new Label(Utils.mLanguageIndexes.get(strFile.getDirName()),
-                                currenRow, values[j],mWritableCellFormat);
+                        label = new Label(item.getIndex(),
+                                currenRow, values[j], mWritableCellFormat);
                         if (ids[j].startsWith(Utils.SURFIX_ARRAY)
                                 || ids[j].startsWith(Utils.SURFIX_PLURALS)) {
                             ids[j] = ids[j] + j;
@@ -241,17 +250,19 @@ public class AppDir {
                             break;
                         }
                         WritableCellFormat mWritableCellFormat = null;
-                        //Utils.logd("string : " + values[j] + " isContainSpecialCharacter :" + Utils.isContainSpecialCharacter(values[j]));
-                        if(Utils.isContainSpecialCharacter(values[j])){
+                        // Utils.logd("string : " + values[j] +
+                        // " isContainSpecialCharacter :" +
+                        // Utils.isContainSpecialCharacter(values[j]));
+                        if (Utils.isContainSpecialCharacter(values[j])) {
                             mWritableCellFormat = getCellFormat(CELL_SPECIAL);
-                        }else{
+                        } else {
                             mWritableCellFormat = getCellFormat(CELL_NORMAL);
                         }
-                        Label label = new Label(Utils.mLanguageIndexes.get(strFile.getDirName()),
+                        Label label = new Label(item.getIndex(),
                                 idsMap.get(ids[j]), values[j],
                                 mWritableCellFormat);
                         // Label label = new
-                        // Label(Utils.mLanguageIndexes.get(strFile.getDirName()),
+                        // Label(Main.mLanguageIndexes.get(strFile.getDirName()),
                         // idsMap.get(ids[j]), values[j]);
                         sheet.addCell(label);
                     }
@@ -273,10 +284,12 @@ public class AppDir {
             label = new Label(Utils.ID_COLUMN_INDEX, Utils.LANGUAGE_ROW, "ID",
                     mWritableCellFormat);
             sheet.addCell(label);
-            Set<String> mKeys = Utils.mLanguages.keySet();
+            HashMap<String, ConfigItem> languages = Config.getInstance().getLanguages();
+            Set<String> mKeys = languages.keySet();
             for (String key : mKeys) {
-                label = new Label(Utils.mLanguageIndexes.get(key), Utils.LANGUAGE_ROW,
-                        Utils.mLanguages.get(key), mWritableCellFormat);
+                ConfigItem item = languages.get(key);
+                label = new Label(item.getIndex(), Utils.LANGUAGE_ROW,
+                        item.getValue(), mWritableCellFormat);
                 sheet.addCell(label);
             }
         } catch (RowsExceededException e) {

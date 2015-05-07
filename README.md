@@ -1,35 +1,30 @@
     USAGE:
-          ./build.sh [command] [path] {params}
-    >>>>>>>    command  cxls    <<<<<<<<<<<<<<<
-           command cxls will create a xxx.xls at xls direcotry according the path of user input!
-    
-           path is the app dir (absolute path) which contains strings.xml or strings.xml
-           params is Optional -a or -t 
-           params -a is stand for the path is android root path
-           params -t is stand for include all strings of strings.xml(include translatable=false)
 
-	example: 
-		./build.sh cxls app_path
-    
-    
-    >>>>>>>    command  cxml    <<<<<<<<<<<<<<<
-           command cxml will create some string.xml at data dirctory from the xxx.xls which in current directory!
-           you must put your xls file in the current dir
-           if has start and end,start must gratter end,start and end can't has only one,
-           if not has start and end default is all xls files
-    
-	example: 
-		./build.sh cxml
-    
-    >>>>>>>    command  rcxml    <<<<<<<<<<<<<<<
-           command rcxml will create some string.xml which the id come from the path  value/strings.xml and value from the xxx.xls 
-           path is the dir which contains strings.xml or strings.xml absolute path
-           params is Optional -a or -t 
-           params -a is stand for the path is android root path
-           params -t is stand for include all strings of strings.xml(include translatable=false)
-           the output dir data(id and vlaue are both from xls file) and output dir rwdata(which id from values/string and value from xls file)
-    
-	example: 
-		./build.sh rcxml app_path
+        ./android_string.sh xls path [-a] [-t] [-o] [path] [-d] [-h]
+        
+        this command will create a xxx.xls at xls direcotry according the path of user input!
+        
+            path         the app dir (absolute path) which contains strings.xml or strings.xml
+            -a           the path is android root path : only find strings.xml on packages/apps, frameworks/base/core/res/res, frameworks/packages
+            -t           all strings of strings.xml(include translatable=false)
+            -o path      define output dir
+            -d           print some debug infos
+            -h           print help
+        
+        
 
+
+        ./android_string.sh xml  [path] [-r] [-a] [-o path] [-d] [-h] [-x path]
+        
+        this command will create some string.xml at output dirctory(default is xml which you can changed by param -o path) from the xxx.xls which in current directory or the params path!
+        
+        path         the app dir (absolute path) which contains strings.xml or strings.xml can absent
+        -a           the path is android root path : only find strings.xml on packages/apps, frameworks/base/core/res/res, frameworks/packages
+        -x path      the dir which has a file *.xls(the current dir if absend)
+        -r           all strings of strings.xml(include translatable=false)
+        -o path      define output dir
+        -d           print some debug infos
+        -h           print help
+
+        
     some times you can find an error.txt int strings.xml dir,it records some error when write strings.xml

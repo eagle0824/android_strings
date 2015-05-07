@@ -1,12 +1,18 @@
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
+
+package main.java.com.eagle.mode;
+
+import main.java.com.eagle.Utils;
+import main.java.com.eagle.config.Config;
 
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
-public class StrHandler extends DefaultHandler{
-    private ArrayList<StringObj> mStrObjs = new ArrayList<StringObj>();
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+
+public class StringHandler extends DefaultHandler {
+    private ArrayList<StringObj> mStrObjs;
     private StringBuilder sb;
     private StringObj strObj;
     private StringArray strArray;
@@ -16,15 +22,14 @@ public class StrHandler extends DefaultHandler{
     private boolean isItemHasAttr = false;
     private String pluralsKey = null;
     private boolean mIncludeNotTranslate = false;
-    private AppDir mAppDir;
+    private App mAppDir;
     private StringsFile mStrFile;
 
-    public StrHandler(StringsFile strFile, Command cmd,AppDir appDir) {
+    public StringHandler(StringsFile strFile, App appDir) {
         mStrFile = strFile;
-        mStrObjs.clear();
-        mIncludeNotTranslate = cmd.isIncludeNotTranslate;
+        mStrObjs = new ArrayList<StringObj>();
+        mIncludeNotTranslate = Config.getInstance().getCommand().isIncludeNotTranslate();
         mAppDir = appDir;
-
     }
 
     @Override
@@ -58,10 +63,11 @@ public class StrHandler extends DefaultHandler{
                 }
             }
             int producIndex = attrs.getIndex(Utils.ATTR_PRODUCT);
-            if(producIndex!=-1){
-                String productId = attrs.getValue(nameIndex)+"\" product=\""+ attrs.getValue(producIndex);
+            if (producIndex != -1) {
+                String productId = attrs.getValue(nameIndex) + "\" product=\""
+                        + attrs.getValue(producIndex);
                 strObj = new StringObj(productId);
-            }else{
+            } else {
                 strObj = new StringObj(attrs.getValue(nameIndex));
             }
         } else if (qName.equals("string-array")/* || qName.equals("array") */) {
@@ -97,7 +103,7 @@ public class StrHandler extends DefaultHandler{
                 if (quantityIndex != -1) {
                     isItemHasAttr = true;
                     pluralsKey = attrs.getValue(quantityIndex);
-                }else{
+                } else {
                     isItemHasAttr = false;
                 }
             } else {
@@ -114,7 +120,8 @@ public class StrHandler extends DefaultHandler{
             }
             sb.append(">");
         } else if (qName.equals("b") || qName.equals("li") || qName.equals("i")
-                || qName.equals("u") || qName.equals("ignore") || qName.equals("p")) {
+                || qName.equals("u") || qName.equals("ignore") || qName.equals("p")
+                || qName.equals("ul")) {
             sb.append("<").append(qName).append(">");
         } else {
             if (!qName.equals("resources") && !qName.equals("skip")) {
@@ -175,7 +182,8 @@ public class StrHandler extends DefaultHandler{
                 || qName.equals("img")) {
             sb.append("</").append(qName).append(">");
         } else if (qName.equals("b") || qName.equals("li") || qName.equals("i")
-                || qName.equals("u") || qName.equals("ignore") || qName.equals("p")) {
+                || qName.equals("u") || qName.equals("ignore") || qName.equals("p")
+                || qName.equals("ul")) {
             sb.append("</").append(qName).append(">");
         } else {
             if (!qName.equals("resources") && !qName.equals("skip")) {
@@ -186,63 +194,9 @@ public class StrHandler extends DefaultHandler{
 
     @Override
     public void endDocument() throws SAXException {
-        // logd("end document");
-        /*
-         * for (StringObj strObj : mStrObjs) { logd(strObj.toString()); }
-         * logd("key"); for (StringObj strObj : mStrObjs) {
-         * logd(strObj.getAllId()); } logd("value"); for (StringObj strObj :
-         * mStrObjs) { logd(strObj.getAllValue()); }
-         */
-        // if (mSavePath != "") {
-        // mSavePath = mSavePath + "/";
-        // }
-        // File ids = new File(mSavePath + "ids.txt");
-        // File values = new File(mSavePath + "values.txt");
-        // File id_values = new File(mSavePath + "id_value.txt");
-        // if (!mAppend) {
-        // ids.delete();
-        // values.delete();
-        // id_values.delete();
-        // }
-        // // logd("write id_values.txt");
-        // try {
-        // FileWriter fileWriter = new FileWriter(id_values, mAppend);
-        // fileWriter.write(mFilePath + Utils.NEWLINE);
-        // for (StringObj strObj : mStrObjs) {
-        // fileWriter.write(strObj.toString());
-        // }
-        // fileWriter.flush();
-        // fileWriter.close();
-        // } catch (IOException e) {
-        // e.printStackTrace();
-        // }
-        // // logd("write ids.txt");
-        // try {
-        // FileWriter fileWriter = new FileWriter(ids, mAppend);
-        // fileWriter.write(mFilePath + Utils.NEWLINE);
-        // for (StringObj strObj : mStrObjs) {
-        // fileWriter.write(strObj.getAllId() + Utils.NEWLINE);
-        // }
-        // fileWriter.flush();
-        // fileWriter.close();
-        // } catch (IOException e) {
-        // e.printStackTrace();
-        // }
-        // // logd("write values.txt");
-        // try {
-        // FileWriter fileWriter = new FileWriter(values, mAppend);
-        // fileWriter.write(mFilePath + Utils.NEWLINE);
-        // for (StringObj strObj : mStrObjs) {
-        // fileWriter.write(strObj.getAllValue() + Utils.NEWLINE);
-        // }
-        // fileWriter.flush();
-        // fileWriter.close();
-        // } catch (IOException e) {
-        // e.printStackTrace();
-        // }
         mStrFile.setArrayStrs(mStrObjs);
-        //Utils.logd("String file : " + mStrFile.getDirName());
-        if(mAppDir!=null){
+        // Utils.logd("String file : " + mStrFile.getDirName());
+        if (mAppDir != null) {
             mAppDir.addStringFile(mStrFile);
         }
     }
