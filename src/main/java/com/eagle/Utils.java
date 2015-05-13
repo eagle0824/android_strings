@@ -7,6 +7,8 @@ import main.java.com.eagle.mode.App;
 import main.java.com.eagle.mode.StringsFile;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.regex.Matcher;
@@ -14,14 +16,12 @@ import java.util.regex.Pattern;
 
 public class Utils {
 
-    public static boolean DEBUG = true;
+    public static boolean DEBUG = false;
 
     public static final String STRING_HEAD = "<?xml version=\"1.0\" encoding=\"utf-8\"?>" + "\n" +
             "<resources xmlns:android=\"http://schemas.android.com/apk/res/android\"" + "\n" +
             "    xmlns:xliff=\"urn:oasis:names:tc:xliff:document:1.2\">\n";
     public static final String STRING_END = "</resources>";
-
-    public static final String VALUES = "values";
 
     public static final String STRING_FILE_NAME = "strings.xml";
 
@@ -75,6 +75,7 @@ public class Utils {
     public static final String QUANTITY = "quantity";
     public static final String FRAMEWORKS = "frameworks";
     public static final String RES = "res";
+    public static final String VALUES = "values";
     public static final String FRAMEWORK_BASE_PACKAGE = "frameworks/base/packages";
     public static final String FRAMEWORK_BASE_RES = "frameworks/base/core/res";
     public static final String PACKAGES = "packages";
@@ -87,11 +88,11 @@ public class Utils {
     public static final String ATTR_TRANSLATE = "translate";
     public static final String ATTR_PRODUCT = "product";
 
+    public static final String MANIFEST_FILE_NAME = "AndroidManifest.xml";
+
     public static final boolean isRepaceTabAndNewLine = false;
 
     private static Utils mInstance;
-
-    private ArrayList<String> stringPaths = new ArrayList<String>();
 
     public void parserArgs(String[] args) {
         Utils.logd(Arrays.toString(args));
@@ -134,17 +135,22 @@ public class Utils {
         File file = new File(fileUri);
         if (file.exists()) {
             // allStringFiles.clear();
-            deleteFile(new File(cmd.getOutputPath(), NEW_XLS_NAME));
+            File xlsFile = new File(cmd.getOutputPath(), NEW_XLS_NAME);
+            deleteFile(xlsFile);
             loge("begin create xls. Please wait ...");
             initDir(cmd.getOutputPath());
-            if (cmd.isBuildPath()) {
-                getBuildFiles(file);
-            } else {
-                getStringFiles(file);
+            if (file.isFile()) {
+                parserStringFiles(file);
+            } else if (file.isDirectory()) {
+                if (cmd.isBuildPath()) {
+                    parserBuildDir(file);
+                } else {
+                    parserNormalDir(file);
+                }
             }
-            loge("end create xls!");
+            loge("create " + xlsFile.getPath() + " successful!");
         } else {
-            loge("File " + file.getPath() + "not exist!");
+            loge("create xls failed, because " + file.getPath() + " not exist!");
             return;
         }
     }
@@ -163,21 +169,23 @@ public class Utils {
             }
             File file = new File(fileUri);
             if (file.exists()) {
-                stringPaths.clear();
-                logd("finding strings.xml file.Please wait ...");
+                ArrayList<String> stringsPaths = new ArrayList<String>();
+                loge("finding strings.xml file.Please wait ...");
                 if (cmd.isBuildPath()) {
-                    getEnBuildFiles(file);
+                    stringsPaths = getEnBuildFiles(file);
                 } else {
-                    getEnStringFiles(file);
+                    // stringsPaths = getEnStringFiles(file);
                 }
-                int size = stringPaths.size();
-                logd("finding strings.xml file finished! size : " + size);
+                int size = stringsPaths.size();
+                loge("finding strings.xml file finished! size : " + size);
                 if (size > 0) {
-                    ExcelHelper mExcelHelper = new ExcelHelper(cmd.getOutputPath());
+                    ExcelHelper mExcelHelper = new
+                            ExcelHelper(cmd.getOutputPath());
                     mExcelHelper.createXmlFromXlsFile(xlsFile);
                     for (int i = 0; i < size; i++) {
-                        // logd(stringPaths.get(i));
-                        StringsFile strFile = new StringsFile(stringPaths.get(i));
+                        loge(stringsPaths.get(i));
+                        StringsFile strFile = new
+                                StringsFile(stringsPaths.get(i));
                         strFile.doParserStringsFile();
                         mExcelHelper.createXmlByStringsFile(strFile);
                     }
@@ -192,51 +200,131 @@ public class Utils {
         }
     }
 
-    private void getEnStringFiles(File file) {
+    private ArrayList<String> getEnBuildFiles(File file) {
+        ArrayList<String> baseDirs = Config.getInstance().getBaseDirs();
+        ArrayList<String> stringsFiles = new ArrayList<String>();
+        for (String basedir : baseDirs) {
+            getEnBuildStringsFiles(new File(file, basedir), stringsFiles);
+        }
+        return stringsFiles;
+    }
+
+    private void findAppDirs(File file, ArrayList<String> apps) {
         String path = file.getAbsolutePath();
-        logd("getEnStringFiles ===> " + path);
-        if (file.isDirectory() && !path.contains("values-") && !path.contains("test/res")
-                && !path.contains("tests/res")) {
-            File[] files = file.listFiles();
-            int len = files.length;
-            if (len > 0) {
-                for (int i = 0; i < len; i++) {
-                    getEnStringFiles(files[i]);
+        if (file.isDirectory()) {
+            if (Utils.isAppDir(path)) {
+                apps.add(file.getAbsolutePath());
+            } else {
+                File[] subDirs = file.listFiles(new FileFilter() {
+                    @Override
+                    public boolean accept(File pathname) {
+                        String name = pathname.getName();
+                        if (pathname.isDirectory() && !name.startsWith(".") && !name.equals("jni")
+                                && !name.equals("native")) {
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+                if (subDirs != null && subDirs.length > 0) {
+                    for (File dir : subDirs) {
+                        findAppDirs(dir, apps);
+                    }
                 }
             }
         } else {
-            ArrayList<String> stringFiles = Config.getInstance().getStringFiles();
-            int size = stringFiles.size();
+            loge("getAppDirs " + path + " is not dir!");
+        }
+    }
+
+    private void getEnBuildStringsFiles(File file, ArrayList<String> stringsFiles) {
+        String path = file.getAbsolutePath();
+        if (file.isDirectory()) {
+            ArrayList<String> apps = new ArrayList<String>();
+            findAppDirs(file, apps);
             ArrayList<String> appNames = Config.getInstance().getAppNames();
-            for (int i = 0; i < size; i++) {
-                String name = stringFiles.get(i);
-                if (path.endsWith("values" + "/" + name)) {
-                    if (appNames.contains(getAppNameByStringPath(path))) {
-                        stringPaths.add(path);
-                    } else if (path.endsWith("res/res/values" + "/" + name)) {
-                        stringPaths.add(path);
+            for (String appDir : apps) {
+                String appName = Utils.getAppName(appDir);
+                if (appNames.size() > 0) {
+                    if (appNames.contains(appName)) {
+                        stringsFiles.addAll(getAppStringsFiles(path, true));
+                    } else if (appName.equals(RES)) {// frameworks-res
+                        stringsFiles.addAll(getAppStringsFiles(path, true));
+                    }
+                } else {
+                    stringsFiles.addAll(getAppStringsFiles(appDir, true));
+                }
+            }
+        } else {
+            loge("error " + path + " is not dir!");
+        }
+    }
+
+    private ArrayList<String> getAppStringsFiles(String appDir, boolean onlyEnString) {
+        ArrayList<String> stringsFiles = new ArrayList<String>();
+        File appFile = new File(appDir);
+        File[] resFiles = appFile.listFiles(new FilenameFilter() {
+            @Override
+            public boolean accept(File dir, String name) {
+                if (dir.isDirectory() && name.equals(RES)) {
+                    return true;
+                }
+                return false;
+            }
+        });
+        if (resFiles != null && resFiles.length == 1) {
+            ArrayList<String> defaultStringsName = Config.getInstance().getStringFiles();
+            int size = defaultStringsName.size();
+            if (onlyEnString) {
+                for (int i = 0; i < size; i++) {
+                    String name = defaultStringsName.get(i);
+                    File stringsFile = new File(resFiles[0], VALUES + "/" + name);
+                    if (stringsFile.exists() && stringsFile.isFile()) {
+                        stringsFiles.add(stringsFile.getAbsolutePath());
+                    }
+                }
+            } else {
+                File[] valuesFiles = appFile.listFiles(new FilenameFilter() {
+                    @Override
+                    public boolean accept(File dir, String name) {
+                        if (dir.isDirectory() && name.contains(VALUES)) {
+                            return true;
+                        }
+                        return false;
+                    }
+                });
+                if (valuesFiles != null && valuesFiles.length > 0) {
+                    for (File valuesDir : valuesFiles) {
+                        for (int i = 0; i < size; i++) {
+                            String name = defaultStringsName.get(i);
+                            File stringsFile = new File(valuesDir, name);
+                            if (stringsFile.exists() && stringsFile.isFile()) {
+                                stringsFiles.add(stringsFile.getAbsolutePath());
+                            }
+                        }
                     }
                 }
             }
         }
+        logd("getAppStringsFiles > " + appDir + " strings count : " + stringsFiles.size());
+        return stringsFiles;
     }
 
-    private void getBuildFiles(File file) {
+    private void parserBuildDir(File file) {
         ArrayList<String> baseDirs = Config.getInstance().getBaseDirs();
         for (String dir : baseDirs) {
-            getInitAppDir(new File(file, dir));
+            ArrayList<String> apps = new ArrayList<String>();
+            findAppDirs(new File(file, dir), apps);
+            App app = null;
+            for(String appDir: apps){
+                loge("app dir : " + appDir);
+                app = new App(appDir);
+                app.parserAppDir();
+            }
         }
     }
 
-    private void getEnBuildFiles(File file) {
-        logd("getEnBuildFiles :" + file);
-        ArrayList<String> baseDirs = Config.getInstance().getBaseDirs();
-        for (String dir : baseDirs) {
-            getEnStringFiles(new File(file, dir));
-        }
-    }
-
-    private void getStringFiles(File file) {
+    private void parserStringFiles(File file) {
         String path = file.getAbsolutePath();
         if (file.isFile()) {
             ArrayList<String> stringFiles = Config.getInstance().getStringFiles();
@@ -248,99 +336,35 @@ public class Utils {
                     stringsFile.writeToExcel();
                 }
             }
-        } else if (file.isDirectory()) {
+        } else {
+            loge(path + " is not file path!");
+        }
+    }
+
+    private void parserNormalDir(File file) {
+        String path = file.getAbsolutePath();
+        if (file.isDirectory()) {
             File[] files = file.listFiles();
             for (int i = 0; i < files.length; i++) {
                 File subFile = files[i];
                 if (subFile.isDirectory()) {
                     if (subFile.getAbsolutePath().endsWith("res")) {
                         File parent = subFile.getParentFile();
-                        if (parent.isDirectory() && !parent.getAbsolutePath().endsWith("bin")) {
+                        String appName = Utils.getAppName(parent.getAbsolutePath());
+                        if (!isEmpty(appName) && !appName.equals("tests") && !appName.equals("bin")) {
                             App appDir = new App(parent);
                             appDir.parserAppDir();
-                            break;
-                        } else {
-                            break;
                         }
+                        break;
                     } else {
-                        getStringFiles(subFile);
+                        parserNormalDir(subFile);
                     }
                 } else {
-                    getStringFiles(subFile);
-                }
-            }
-        }
-    }
-
-    public String getAppNameByStringPath(String path) {
-        String[] strs = path.split("\\/");
-        int len = strs.length;
-        if (len > 4) {
-            // logd(strs[len - 4]);
-            return strs[len - 4];
-        }
-        return path;
-    }
-
-    public String getAppNameByAppPath(String path) {
-        String[] strs = path.split("\\/");
-        int len = strs.length;
-        if (len > 1) {
-            // logd(strs[len - 4]);
-            return strs[len - 1];
-        }
-        return path;
-    }
-
-    private void getInitAppDir(File file) {
-        if (file.isDirectory()) {
-            String filePath = file.getAbsolutePath();
-            if (filePath.endsWith(FRAMEWORK_BASE_RES)) {
-                App mAppDir = new App(FRAMEWORKS, file.getAbsolutePath());
-                mAppDir.parserAppDir();
-            } else if (filePath.endsWith(PACKAGES)) {
-                dealDirectory(file);
-            } else {
-                logd("not treat current :dir:" + filePath);
-            }
-        }
-    }
-
-    private void dealDirectory(File file) {
-        if (file.isDirectory()) {
-            App appDir = null;
-            String path = file.getAbsolutePath();
-            // logd("dealDir file : " + path);
-            if (path.endsWith(FRAMEWORK_BASE_PACKAGE)) {
-                File[] files = file.listFiles();
-                int size = files.length;
-                for (int i = 0; i < size; i++) {
-                    appDir = new App(files[i]);
-                    appDir.parserAppDir();
-                }
-            } else if (path.endsWith(PACKAGES)) {
-                File[] files = file.listFiles();
-                int size = files.length;
-                for (int i = 0; i < size; i++) {
-                    dealDirectory(files[i]);
-                }
-            } else {
-                String[] paths = path.split("\\/");
-                int length = paths.length;
-                if (length > 2 && paths[length - 2].equals(PACKAGES)) {
-                    ArrayList<String> appNames = Config.getInstance().getAppNames();
-                    File[] files = file.listFiles();
-                    int size = files.length;
-                    for (int i = 0; i < size; i++) {
-                        if (appNames.contains(getAppNameByAppPath(files[i].getAbsolutePath()))) {
-                            appDir = new App(files[i]);
-                            appDir.parserAppDir();
-                        }
-                    }
+                    parserNormalDir(subFile);
                 }
             }
         } else {
-            logd("deal packages not is dir path is : " + file.getAbsolutePath());
+            loge(path + " is not dir path!");
         }
     }
 
@@ -464,6 +488,52 @@ public class Utils {
         }
     }
 
+    public static boolean isAppDir(String dirPath) {
+        File file = new File(dirPath);
+        if (file.isDirectory()) {
+            File[] subFiles = file.listFiles(new FileFilter() {
+                @Override
+                public boolean accept(File pathname) {
+                    if (pathname.isFile() && pathname.getName().equals(MANIFEST_FILE_NAME)) {
+                        return true;
+                    }
+                    return false;
+                }
+            });
+            if (subFiles != null && subFiles.length == 1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static String getAppName(String filePath) {
+        File file = new File(filePath);
+        if (file.exists()) {
+            if (file.isDirectory()) {
+                String name = "";
+                if (isAppDir(filePath)) {
+                    name = file.getName();
+                }
+                while (isEmpty(name)) {
+                    file = file.getParentFile();
+                    if (file == null || isEmpty(file.getAbsolutePath())
+                            || file.getAbsolutePath().equals("/")) {
+                        break;
+                    }
+                    name = getAppName(file.getAbsolutePath());
+                }
+                return name;
+            } else if (file.isFile()) {
+                File parent = file.getParentFile();
+                if (parent != null) {
+                    return getAppName(parent.getAbsolutePath());
+                }
+            }
+        }
+        return "";
+    }
+
     /*
      * remove the string's blank and qutation
      */
@@ -502,8 +572,9 @@ public class Utils {
                 + " from the xxx.xls which in current directory or the params path!");
         loge("");
         loge("       path         the app dir (absolute path) which contains strings.xml or strings.xml can absent");
+        loge("       -a           the path is android root path : only find strings.xml on packages/apps, frameworks/base/core/res/res, frameworks/packages");
         loge("       -x path      the dir which has a file *.xls(the current dir if absend)");
-        loge("       -r           all strings of strings.xml(include translatable=false)");
+        loge("       -t           all strings of strings.xml(include translatable=false)");
         loge("       -o path      define output dir");
         loge("       -d           print some debug infos");
         loge("       -h           print help");

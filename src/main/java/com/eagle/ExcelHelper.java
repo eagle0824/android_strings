@@ -1,15 +1,14 @@
 
 package main.java.com.eagle;
 
-import main.java.com.eagle.config.Config;
-import main.java.com.eagle.mode.FormatResult;
-import main.java.com.eagle.mode.StringObj;
-import main.java.com.eagle.mode.StringsFile;
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
+import main.java.com.eagle.mode.FormatResult;
+import main.java.com.eagle.mode.StringObj;
+import main.java.com.eagle.mode.StringsFile;
 
 import java.io.File;
 import java.io.FileOutputStream;
