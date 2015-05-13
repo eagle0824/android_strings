@@ -134,7 +134,6 @@ public class Utils {
         }
         File file = new File(fileUri);
         if (file.exists()) {
-            // allStringFiles.clear();
             File xlsFile = new File(cmd.getOutputPath(), NEW_XLS_NAME);
             deleteFile(xlsFile);
             loge("begin create xls. Please wait ...");
@@ -142,10 +141,14 @@ public class Utils {
             if (file.isFile()) {
                 parserStringFiles(file);
             } else if (file.isDirectory()) {
-                if (cmd.isBuildPath()) {
-                    parserBuildDir(file);
-                } else {
-                    parserNormalDir(file);
+                ArrayList<String> allApps = findAppDirsByRoot(file, cmd.isBuildPath());
+                if(allApps.size() > 0){
+                    App app = null;
+                    for(String appDir : allApps){
+                        loge("app dir : " + appDir);
+                        app = new App(appDir);
+                        app.parserAppDir();
+                    }
                 }
             }
             loge("create " + xlsFile.getPath() + " successful!");
@@ -170,20 +173,16 @@ public class Utils {
             File file = new File(fileUri);
             if (file.exists()) {
                 ArrayList<String> stringsPaths = new ArrayList<String>();
-                loge("finding strings.xml file.Please wait ...");
-                if (cmd.isBuildPath()) {
-                    stringsPaths = getEnBuildFiles(file);
-                } else {
-                    // stringsPaths = getEnStringFiles(file);
-                }
+                loge("find en strings.xml file.Please wait ...");
+                stringsPaths = findEnStringsFilesByRoot(file, cmd.isBuildPath());
                 int size = stringsPaths.size();
-                loge("finding strings.xml file finished! size : " + size);
+                loge("find en strings.xml file finished! app size : " + size);
                 if (size > 0) {
                     ExcelHelper mExcelHelper = new
                             ExcelHelper(cmd.getOutputPath());
                     mExcelHelper.createXmlFromXlsFile(xlsFile);
                     for (int i = 0; i < size; i++) {
-                        loge(stringsPaths.get(i));
+                        logd(stringsPaths.get(i));
                         StringsFile strFile = new
                                 StringsFile(stringsPaths.get(i));
                         strFile.doParserStringsFile();
@@ -195,18 +194,48 @@ public class Utils {
                 return;
             }
         } else {
+            loge("begin create strings.xml...");
             ExcelHelper mExcelHelper = new ExcelHelper(cmd.getOutputPath());
             mExcelHelper.createXmlFromXlsFile(xlsFile);
+            loge("finished create strings.xml on dir " + cmd.getOutputPath());
         }
     }
 
-    private ArrayList<String> getEnBuildFiles(File file) {
-        ArrayList<String> baseDirs = Config.getInstance().getBaseDirs();
+    private ArrayList<String> findEnStringsFilesByRoot(File file, boolean buildPath) {
         ArrayList<String> stringsFiles = new ArrayList<String>();
-        for (String basedir : baseDirs) {
-            getEnBuildStringsFiles(new File(file, basedir), stringsFiles);
+        ArrayList<String> apps = findAppDirsByRoot(file, buildPath);
+        int appSize = apps.size();
+        if (appSize > 0){
+            ArrayList<String> appNames = Config.getInstance().getAppNames();
+            String appPath = "";
+            for(int i=0; i<appSize; i++){
+                appPath = apps.get(i);
+                String appName = Utils.getAppName(appPath);
+                if (appNames.size() > 0) {
+                    if (appNames.contains(appName)) {
+                        stringsFiles.addAll(getAppStringsFiles(appPath, true));
+                    } else if (appName.equals(RES)) {// frameworks-res
+                        stringsFiles.addAll(getAppStringsFiles(appPath, true));
+                    }
+                } else {
+                    stringsFiles.addAll(getAppStringsFiles(appPath, true));
+                }
+            } 
         }
         return stringsFiles;
+    }
+
+    private ArrayList<String> findAppDirsByRoot(File file, boolean buildPath){
+        ArrayList<String> apps = new ArrayList<String>();
+        if (buildPath){
+            ArrayList<String> baseDirs = Config.getInstance().getBaseDirs();
+            for (String dir : baseDirs) {
+                findAppDirs(new File(file, dir), apps);
+            }
+        } else {
+            findAppDirs(file, apps);
+        }
+        return apps;
     }
 
     private void findAppDirs(File file, ArrayList<String> apps) {
@@ -220,7 +249,7 @@ public class Utils {
                     public boolean accept(File pathname) {
                         String name = pathname.getName();
                         if (pathname.isDirectory() && !name.startsWith(".") && !name.equals("jni")
-                                && !name.equals("native")) {
+                                && !name.equals("native") && !name.equals("tests") && !name.equals("bin")) {
                             return true;
                         }
                         return false;
@@ -233,30 +262,7 @@ public class Utils {
                 }
             }
         } else {
-            loge("getAppDirs " + path + " is not dir!");
-        }
-    }
-
-    private void getEnBuildStringsFiles(File file, ArrayList<String> stringsFiles) {
-        String path = file.getAbsolutePath();
-        if (file.isDirectory()) {
-            ArrayList<String> apps = new ArrayList<String>();
-            findAppDirs(file, apps);
-            ArrayList<String> appNames = Config.getInstance().getAppNames();
-            for (String appDir : apps) {
-                String appName = Utils.getAppName(appDir);
-                if (appNames.size() > 0) {
-                    if (appNames.contains(appName)) {
-                        stringsFiles.addAll(getAppStringsFiles(path, true));
-                    } else if (appName.equals(RES)) {// frameworks-res
-                        stringsFiles.addAll(getAppStringsFiles(path, true));
-                    }
-                } else {
-                    stringsFiles.addAll(getAppStringsFiles(appDir, true));
-                }
-            }
-        } else {
-            loge("error " + path + " is not dir!");
+            loge("findAppDirs " + path + " is not dir!");
         }
     }
 
@@ -310,19 +316,7 @@ public class Utils {
         return stringsFiles;
     }
 
-    private void parserBuildDir(File file) {
-        ArrayList<String> baseDirs = Config.getInstance().getBaseDirs();
-        for (String dir : baseDirs) {
-            ArrayList<String> apps = new ArrayList<String>();
-            findAppDirs(new File(file, dir), apps);
-            App app = null;
-            for(String appDir: apps){
-                loge("app dir : " + appDir);
-                app = new App(appDir);
-                app.parserAppDir();
-            }
-        }
-    }
+
 
     private void parserStringFiles(File file) {
         String path = file.getAbsolutePath();
@@ -341,32 +335,6 @@ public class Utils {
         }
     }
 
-    private void parserNormalDir(File file) {
-        String path = file.getAbsolutePath();
-        if (file.isDirectory()) {
-            File[] files = file.listFiles();
-            for (int i = 0; i < files.length; i++) {
-                File subFile = files[i];
-                if (subFile.isDirectory()) {
-                    if (subFile.getAbsolutePath().endsWith("res")) {
-                        File parent = subFile.getParentFile();
-                        String appName = Utils.getAppName(parent.getAbsolutePath());
-                        if (!isEmpty(appName) && !appName.equals("tests") && !appName.equals("bin")) {
-                            App appDir = new App(parent);
-                            appDir.parserAppDir();
-                        }
-                        break;
-                    } else {
-                        parserNormalDir(subFile);
-                    }
-                } else {
-                    parserNormalDir(subFile);
-                }
-            }
-        } else {
-            loge(path + " is not dir path!");
-        }
-    }
 
     public static Utils getInstance() {
         if (mInstance == null) {
@@ -507,6 +475,11 @@ public class Utils {
         return false;
     }
 
+    public static String getAppName(File file) {
+        String filePath = file.getAbsolutePath();
+        return getAppName(filePath);
+    }
+
     public static String getAppName(String filePath) {
         File file = new File(filePath);
         if (file.exists()) {
@@ -521,13 +494,13 @@ public class Utils {
                             || file.getAbsolutePath().equals("/")) {
                         break;
                     }
-                    name = getAppName(file.getAbsolutePath());
+                    name = getAppName(file);
                 }
                 return name;
             } else if (file.isFile()) {
                 File parent = file.getParentFile();
                 if (parent != null) {
-                    return getAppName(parent.getAbsolutePath());
+                    return getAppName(parent);
                 }
             }
         }

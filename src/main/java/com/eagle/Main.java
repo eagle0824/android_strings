@@ -5,7 +5,7 @@ public class Main {
 
     /**
      * Enter of program
-     * 
+     *
      * @param args
      */
     public static void main(String args[]) {

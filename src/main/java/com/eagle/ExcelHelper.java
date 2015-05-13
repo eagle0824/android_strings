@@ -127,9 +127,9 @@ public class ExcelHelper {
                     }
                 }
                 int totalLine = (start == 1 ? (rowEnd - rowStart) : (rowEnd - rowStart + 1));
-                Utils.logd("totol line is : " + totalLine + " allRecord count : "
+                Utils.logd("total line is : " + totalLine + " allRecord count : "
                         + getAllReordCount()
-                        + " empty count is : " + emptyRowCount + " language count :" + 1);
+                        + " empty count is : " + emptyRowCount);
             }
             wb.close();
         }
@@ -313,7 +313,7 @@ public class ExcelHelper {
         }
 
         public void writeToFile(StringsFile appStr, String path) {
-            Utils.logd("write App " + mAppName + " to dir " + mOutputDir + " record count : "
+            Utils.loge("write App " + mAppName + " to dir " + mOutputDir + " record count : "
                     + getRecordCount());
             File appFile = new File(path, mAppName);
             Utils.initDir(appFile);
@@ -390,8 +390,7 @@ public class ExcelHelper {
         }
 
         public void writeToFile() {
-            Utils.logd("write " + mAppName + " to dir " + mOutputDir + " count : "
-                    + getRecordCount());
+            Utils.loge("write " + mAppName + " to dir " + mOutputDir + " count : " + getRecordCount());
             File appFile = new File(mOutputDir, mAppName);
             Utils.initDir(appFile);
             int len = mLanguages.size();
