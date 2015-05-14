@@ -332,7 +332,7 @@ public class ExcelHelper {
                 try {
                     OutputStreamWriter out =
                             new OutputStreamWriter(new FileOutputStream(new File(fileValue,
-                                    Utils.STRING_FILE_NAME)), Utils.UTF_8);
+                                    appStr.getFileName())), Utils.UTF_8);
                     File errorFile = new File(fileValue, Utils.ERROR_FILE);
                     OutputStreamWriter error =
                             new OutputStreamWriter(new FileOutputStream(errorFile), Utils.UTF_8);

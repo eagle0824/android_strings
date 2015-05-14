@@ -4,7 +4,6 @@
         <item>strings.xml</item>
         <item>audio.xml</item>
     </string_file>
-    <!--
     <app_name>
         <item>AUX</item>
         <item>BootLogo</item>
@@ -43,30 +42,29 @@
         <item>VCDC</item>
         <item>VideoPlayer</item>
         <item>VideoRecord</item>
+        <item>SystemUI</item>
+        <item>res</item>
     </app_name>
 
-    -->
-
-
     <language>
-        <item key="values" index="2">英语|en</item>
-        <item key="values-zh-rCN" index="4">中文|zh-rCN</item>
-        <item key="values-ru" index="5">俄语|ru</item>
-        <item key="values-el" index="6">希腊语|el</item>
-        <item key="values-pl" index="7">波兰语|pl</item>
-        <item key="values-tr" index="8">土耳其语|tr</item>
-        <item key="values-ar" index="9">阿拉伯文|ar</item>
-        <item key="values-fa" index="10">波斯语|fa</item>
-        <item key="values-ro" index="11">罗马尼亚|ro</item>
-        <item key="values-fr" index="12">法语|fr</item>
-        <item key="values-hu" index="13">匈牙利语|hu</item>
-        <item key="values-it" index="14">意大利语|it</item>
-        <item key="values-th" index="15">泰语|th</item>
-        <item key="values-de" index="16">德语|de</item>
-        <item key="values-uk" index="17">乌克兰语|uk</item>
-        <item key="values-es" index="18">西班牙|es</item>
-        <item key="values-pt" index="19">葡萄牙|pt</item>
-        <item key="values-zh-rTW" index="20">繁体|zh-rTW</item>
+        <item key="values" index="4">英语|en</item>
+        <item key="values-zh-rCN" index="6">中文|zh-rCN</item>
+        <item key="values-ru" index="7">俄语|ru</item>
+        <item key="values-el" index="8">希腊语|el</item>
+        <item key="values-pl" index="9">波兰语|pl</item>
+        <item key="values-tr" index="10">土耳其语|tr</item>
+        <item key="values-ar" index="11">阿拉伯文|ar</item>
+        <item key="values-fa" index="12">波斯语|fa</item>
+        <item key="values-ro" index="13">罗马尼亚|ro</item>
+        <item key="values-fr" index="14">法语|fr</item>
+        <item key="values-hu" index="15">匈牙利语|hu</item>
+        <item key="values-it" index="16">意大利语|it</item>
+        <item key="values-th" index="17">泰语|th</item>
+        <item key="values-de" index="18">德语|de</item>
+        <item key="values-uk" index="19">乌克兰语|uk</item>
+        <item key="values-es" index="20">西班牙|es</item>
+        <item key="values-pt" index="21">葡萄牙|pt</item>
+        <item key="values-zh-rTW" index="22">繁体|zh-rTW</item>
         <!--
         <item key="values-bg" index="21">保加利亚|bg</item>
         <item key="values-ca" index="22">加泰罗尼亚|ca</item>

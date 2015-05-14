@@ -40,6 +40,15 @@ public class StringsFile {
      */
     private App mAppDir;
 
+    private StringsFolder mFolder;
+    private String mFileName;
+
+    public StringsFile(String path, StringsFolder folder) {
+        mPath = path;
+        mFolder = folder;
+        mStrs = new ArrayList<StringObj>();
+    }
+
     public StringsFile(String path, App appDir) {
         mPath = path;
         mStrs = new ArrayList<StringObj>();
@@ -52,17 +61,21 @@ public class StringsFile {
     }
 
     public String getAppName() {
-        String[] strs = mPath.split("\\/");
-        // Utils.logd(Arrays.toString(strs));
-        int len = strs.length;
-        if (len > 4) {
-            Utils.logd(strs[len - 4]);
-            return strs[len - 4];
+        String name = mAppDir.getName();
+        if (!Utils.isEmpty(name)) {
+            return name;
         }
         return mPath;
     }
 
-    public String getDirName() {
+    public String getFileName() {
+        if (Utils.isEmpty(mFileName)) {
+            mFileName = new File(mPath).getName();
+        }
+        return mFileName;
+    }
+
+    public String getValuesFolderName() {
         File file = new File(mPath);
         if (file.exists()) {
             return file.getParentFile().getName();
@@ -70,8 +83,8 @@ public class StringsFile {
         return mPath;
     }
 
-    public void doParserStringsFile() {
-        parserFile(this, mAppDir);
+    public void parser() {
+        parserFile(mPath, mFolder);
     }
 
     /*
@@ -155,12 +168,12 @@ public class StringsFile {
         mStrs.addAll(strs);
     }
 
-    private void parserFile(StringsFile strFile, App appDir) {
+    private void parserFile(String stringsFilePath, StringsFolder folder) {
         SAXParserFactory saxfac = SAXParserFactory.newInstance();
         try {
             SAXParser saxparser = saxfac.newSAXParser();
-            InputStream is = new FileInputStream(strFile.getPath());
-            saxparser.parse(is, new StringHandler(this, appDir));
+            InputStream is = new FileInputStream(stringsFilePath);
+            saxparser.parse(is, new StringHandler(this, folder));
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         } catch (SAXException e) {

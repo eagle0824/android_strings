@@ -22,14 +22,14 @@ public class StringHandler extends DefaultHandler {
     private boolean isItemHasAttr = false;
     private String pluralsKey = null;
     private boolean mIncludeNotTranslate = false;
-    private App mAppDir;
+    private StringsFolder mFolder;
     private StringsFile mStrFile;
 
-    public StringHandler(StringsFile strFile, App appDir) {
+    public StringHandler(StringsFile strFile, StringsFolder folder) {
         mStrFile = strFile;
         mStrObjs = new ArrayList<StringObj>();
         mIncludeNotTranslate = Config.getInstance().getCommand().isIncludeNotTranslate();
-        mAppDir = appDir;
+        mFolder = folder;
     }
 
     @Override
@@ -194,10 +194,8 @@ public class StringHandler extends DefaultHandler {
 
     @Override
     public void endDocument() throws SAXException {
-        mStrFile.setArrayStrs(mStrObjs);
-        // Utils.logd("String file : " + mStrFile.getDirName());
-        if (mAppDir != null) {
-            mAppDir.addStringFile(mStrFile);
+        if(mStrObjs != null){
+            mStrFile.setArrayStrs(mStrObjs);
         }
     }
 }
