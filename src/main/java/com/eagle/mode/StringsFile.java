@@ -3,12 +3,16 @@ package main.java.com.eagle.mode;
 
 import main.java.com.eagle.Utils;
 import main.java.com.eagle.config.Config;
+import main.java.com.eagle.config.ConfigItem;
+import main.java.com.eagle.mode.App.CellType;
 import jxl.Workbook;
 import jxl.read.biff.BiffException;
 import jxl.write.Label;
+import jxl.write.WritableCellFormat;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
+import jxl.write.biff.RowsExceededException;
 
 import org.xml.sax.SAXException;
 
@@ -18,6 +22,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -61,7 +66,7 @@ public class StringsFile {
     }
 
     public String getAppName() {
-        String name = mAppDir.getName();
+        String name = mFolder.getApp().getName();
         if (!Utils.isEmpty(name)) {
             return name;
         }
@@ -75,7 +80,7 @@ public class StringsFile {
         return mFileName;
     }
 
-    public String getValuesFolderName() {
+    public String getFolderName() {
         File file = new File(mPath);
         if (file.exists()) {
             return file.getParentFile().getName();
@@ -85,6 +90,76 @@ public class StringsFile {
 
     public void parser() {
         parserFile(mPath, mFolder);
+    }
+
+    public void writeToExcel(WritableSheet sheet, HashMap<String, Integer> idsMap, int rowOffset)
+            throws RowsExceededException,
+            WriteException {
+
+        String folderName = getFolderName();
+        boolean isEnglish = Utils.VALUES.equals(folderName);
+        HashMap<String, ConfigItem> languages = Config.getInstance().getLanguages();
+        if (!languages.containsKey(folderName)) {
+            return;
+        }
+        ConfigItem item = languages.get(folderName);
+
+        int currenRow = sheet.getRows() + rowOffset - 1;
+        ArrayList<StringObj> mStrs = getAllStrs();
+        int size = mStrs.size();
+
+        for (int i = 0; i < size; i++) {
+            String[] ids = mStrs.get(i).getAllIds();
+            String[] values = mStrs.get(i).getAllValues();
+            for (int j = 0; j < ids.length; j++) {
+                if (isEnglish) {
+                    if (i == 0 && j == 0) {
+                        WritableCellFormat writableCellFormat = Utils.getInstance().getCellFormat(
+                                CellType.APP_NAME);
+                        writableCellFormat = Utils.getInstance().getCellFormat(CellType.NORMAL);
+                        Label label = new Label(Utils.STRING_FILE_NAME_INDEX, currenRow,
+                                getFileName(), writableCellFormat);
+                        sheet.addCell(label);
+                    }
+                    WritableCellFormat writableCellFormat = Utils.getInstance().getCellFormat(
+                            CellType.NORMAL);
+                    Label label = new Label(Utils.ID_COLUMN_INDEX, currenRow, ids[j],
+                            writableCellFormat);
+                    sheet.addCell(label);
+                    if (Utils.isContainSpecialCharacter(values[j])) {
+                        writableCellFormat = Utils.getInstance().getCellFormat(CellType.SPECIAL);
+                    }
+                    label = new Label(item.getIndex(),
+                            currenRow, values[j], writableCellFormat);
+                    if (ids[j].startsWith(Utils.SURFIX_ARRAY)
+                            || ids[j].startsWith(Utils.SURFIX_PLURALS)) {
+                        ids[j] = ids[j] + j;
+                    }
+                    idsMap.put(ids[j], currenRow);
+                    sheet.addCell(label);
+                    currenRow += 1;
+                } else {
+                    if (ids[j].startsWith(Utils.SURFIX_ARRAY)
+                            || ids[j].startsWith(Utils.SURFIX_PLURALS)) {
+                        ids[j] = ids[j] + j;
+                    }
+                    if (idsMap.get(ids[j]) == null) {
+                        Utils.loge("error => " + ids[j] + " can't found in values/strings.xml");
+                        break;
+                    }
+                    WritableCellFormat writableCellFormat = null;
+                    if (Utils.isContainSpecialCharacter(values[j])) {
+                        writableCellFormat = Utils.getInstance().getCellFormat(CellType.SPECIAL);
+                    } else {
+                        writableCellFormat = Utils.getInstance().getCellFormat(CellType.NORMAL);
+                    }
+                    Label label = new Label(item.getIndex(),
+                            idsMap.get(ids[j]), values[j],
+                            writableCellFormat);
+                    sheet.addCell(label);
+                }
+            }
+        }
     }
 
     /*

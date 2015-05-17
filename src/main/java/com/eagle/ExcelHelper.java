@@ -91,6 +91,23 @@ public class ExcelHelper {
                         for (int k = 0; k < cells.length; k++) {
                             String content = cells[k].getContents();
                             content = Utils.removeBlankAndQutation(content);
+                            switch (k) {
+                                case Utils.ID_COLUMN_INDEX: {
+                                    Utils.logd("id : " + content.trim());
+                                }
+                                    break;
+                                case Utils.APP_NAME_COLUMN_INDEX: {
+                                    Utils.logd("app name : " + content.trim());
+
+                                }
+                                    break;
+                                case Utils.STRING_FILE_NAME_INDEX: {
+                                    Utils.logd("string name : " + content.trim());
+                                }
+                                    break;
+                                default:
+                                    break;
+                            }
                             if (k == Utils.ID_COLUMN_INDEX && content.trim() == "") {
                                 record = null;
                                 emptyRowCount++;
@@ -206,8 +223,7 @@ public class ExcelHelper {
         if (cells != null && cells.length > 0) {
             for (int k = 0; k < cells.length; k++) {
                 String content = cells[k].getContents();
-                if (k != Utils.APP_NAME_COLUMN_INDEX && k != Utils.ID_COLUMN_INDEX
-                        && content.trim() != "") {
+                if (k > Utils.ID_COLUMN_INDEX && content.trim() != "") {
                     content = getLanguageName(content);
                     if (content != "") {
                         mIndex.put(content, k);
@@ -390,7 +406,8 @@ public class ExcelHelper {
         }
 
         public void writeToFile() {
-            Utils.loge("write " + mAppName + " to dir " + mOutputDir + " count : " + getRecordCount());
+            Utils.loge("write " + mAppName + " to dir " + mOutputDir + " count : "
+                    + getRecordCount());
             File appFile = new File(mOutputDir, mAppName);
             Utils.initDir(appFile);
             int len = mLanguages.size();

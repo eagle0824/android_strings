@@ -76,9 +76,9 @@ public class App {
             stringsFolder.parser();
         }
         dumpStringsFiles();
-        // if (mStringsFolders.size() != 0) {
-        // writeToExcel();
-        // }
+        if (mStringsFolders.size() != 0) {
+            writeToExcel();
+        }
     }
 
     public Collection<StringsFolder> getStringsFolders() {
@@ -153,17 +153,6 @@ public class App {
         }
     }
 
-    // public void addStringFile(StringsFile strFile) {
-    // String key = strFile.getValuesFolderName();
-    // if (key != null && !key.equals("")) {
-    // if (!mStringsContainers.containsKey(key)) {
-    // mStringsContainers.put(key, n);
-    // } else {
-    // mStringFiles.get(key).addStrings(strFile.getAllStrs());
-    // }
-    // }
-    // }
-
     public String getPath() {
         return mPath;
     }
@@ -190,31 +179,38 @@ public class App {
                 wb = Workbook.createWorkbook(xlsFile, rwb);
                 sheet = wb.getSheet(Utils.SHEET0_INDEX);
             }
-            int rows = sheet.getRows();
-            if (rows == Utils.LANGUAGE_ROW) {
+            startRowIndex = sheet.getRows();
+            if (startRowIndex == Utils.LANGUAGE_ROW) {
                 initExcelTitle(sheet);
             }
-            startRowIndex = rows + 1;
-            HashMap<String, Integer> idsMap = new HashMap<String, Integer>();
+            Utils.logd("app" + getName() + " rows : " + sheet.getRows() + " start : "
+                    + Utils.ROW_START_INDEX);
+            startRowIndex = sheet.getRows() - 1 > Utils.ROW_START_INDEX ? sheet.getRows() - 1
+                    : Utils.ROW_START_INDEX;
+            startRowIndex++;
+
+            // wirte app name
+            WritableCellFormat writableCellFormat = Utils.getInstance().getCellFormat(
+                    CellType.APP_NAME);
+            Label label = new Label(Utils.APP_NAME_COLUMN_INDEX, startRowIndex,
+                    getName(), writableCellFormat);
+            sheet.addCell(label);
+
+            // init id by values strings files
             StringsFolder engFolder = mStringsFolders.get(Utils.VALUES);
-            ArrayList<StringsFile> stringsFiles = engFolder.getStringsFiles();
-            for (StringsFile stringsFile : stringsFiles) {
-                writeToExcel(sheet, rows, true, idsMap, stringsFile);
-            }
+            engFolder.writeToExcel(sheet, true);
+
             Set<String> keys = mStringsFolders.keySet();
             for (String folderName : keys) {
                 if (!folderName.equals(Utils.VALUES)) {
-                    stringsFiles = mStringsFolders.get(folderName).getStringsFiles();
-                    for (StringsFile stringsFile : stringsFiles) {
-                        rows = sheet.getRows();
-                        writeToExcel(sheet, rows, true, idsMap, stringsFile);
-                    }
+                    mStringsFolders.get(folderName).writeToExcel(sheet, false);
                 }
             }
             int endRowIndex = sheet.getRows() - 1;
             Utils.logd("start rows : " + startRowIndex + " end rows : " + endRowIndex);
             if (endRowIndex > startRowIndex) {
-                sheet.mergeCells(Utils.APP_NAME_COLUMN_INDEX, startRowIndex, Utils.APP_NAME_COLUMN_INDEX, endRowIndex);
+                sheet.mergeCells(Utils.APP_NAME_COLUMN_INDEX, startRowIndex,
+                        Utils.APP_NAME_COLUMN_INDEX, endRowIndex);
             }
             wb.write();
             wb.close();
@@ -231,81 +227,13 @@ public class App {
         Utils.logd(String.format("write package %s to excel end!", getName()));
     }
 
-    public void writeToExcel(WritableSheet sheet, int rows, boolean isEnglish,
-            HashMap<String, Integer> idsMap, StringsFile strFile) throws RowsExceededException,
-            WriteException {
-
-        int currenRow = rows + 1;
-        ArrayList<StringObj> mStrs = strFile.getAllStrs();
-        int size = mStrs.size();
-        HashMap<String, ConfigItem> languages = Config.getInstance().getLanguages();
-        String languageKey = strFile.getValuesFolderName();
-        if (!languages.containsKey(languageKey)) {
-            return;
-        }
-        ConfigItem item = languages.get(languageKey);
-        for (int i = 0; i < size; i++) {
-            String[] ids = mStrs.get(i).getAllIds();
-            String[] values = mStrs.get(i).getAllValues();
-            for (int j = 0; j < ids.length; j++) {
-                if (isEnglish) {
-                    if (i == 0 && j == 0) {
-                        WritableCellFormat writableCellFormat = getCellFormat(CellType.APP_NAME);
-                        Label label = new Label(Utils.APP_NAME_COLUMN_INDEX, currenRow,
-                                strFile.getAppName(), writableCellFormat);
-                        sheet.addCell(label);
-                        writableCellFormat = getCellFormat(CellType.NORMAL);
-                        label = new Label(Utils.STRING_FILE_NAME_INDEX, currenRow,
-                                strFile.getFileName(), writableCellFormat);
-                        sheet.addCell(label);
-                    }
-                    WritableCellFormat writableCellFormat = getCellFormat(CellType.NORMAL);
-                    Label label = new Label(Utils.ID_COLUMN_INDEX, currenRow, ids[j],
-                            writableCellFormat);
-                    sheet.addCell(label);
-                    if (Utils.isContainSpecialCharacter(values[j])) {
-                        writableCellFormat = getCellFormat(CellType.SPECIAL);
-                    }
-                    label = new Label(item.getIndex(),
-                            currenRow, values[j], writableCellFormat);
-                    if (ids[j].startsWith(Utils.SURFIX_ARRAY)
-                            || ids[j].startsWith(Utils.SURFIX_PLURALS)) {
-                        ids[j] = ids[j] + j;
-                    }
-                    idsMap.put(ids[j], currenRow);
-                    sheet.addCell(label);
-                    currenRow += 1;
-                } else {
-                    if (ids[j].startsWith(Utils.SURFIX_ARRAY)
-                            || ids[j].startsWith(Utils.SURFIX_PLURALS)) {
-                        ids[j] = ids[j] + j;
-                    }
-                    if (idsMap.get(ids[j]) == null) {
-                        Utils.loge("error => " + ids[j] + " can't found in values/strings.xml");
-                        break;
-                    }
-                    WritableCellFormat writableCellFormat = null;
-                    if (Utils.isContainSpecialCharacter(values[j])) {
-                        writableCellFormat = getCellFormat(CellType.SPECIAL);
-                    } else {
-                        writableCellFormat = getCellFormat(CellType.NORMAL);
-                    }
-                    Label label = new Label(item.getIndex(),
-                            idsMap.get(ids[j]), values[j],
-                            writableCellFormat);
-                    sheet.addCell(label);
-                }
-            }
-        }
-    }
-
     private void initExcelTitle(WritableSheet sheet) throws RowsExceededException, WriteException {
-        WritableCellFormat writableCellFormat = getCellFormat(CellType.NORMAL);
+        WritableCellFormat writableCellFormat = Utils.getInstance().getCellFormat(CellType.NORMAL);
         Label label = new Label(Utils.APP_NAME_COLUMN_INDEX, Utils.LANGUAGE_ROW, "app name",
                 writableCellFormat);
         sheet.addCell(label);
 
-        label = new Label(Utils.STRING_FILE_NAME_INDEX, Utils.LANGUAGE_ROW, "name",
+        label = new Label(Utils.STRING_FILE_NAME_INDEX, Utils.LANGUAGE_ROW, "file name",
                 writableCellFormat);
         sheet.addCell(label);
 
@@ -321,59 +249,6 @@ public class App {
                     item.getValue(), writableCellFormat);
             sheet.addCell(label);
         }
-    }
-
-    /*
-     * getCellFormat
-     * @param type
-     * @return null or WritableCellFormat
-     */
-    public WritableCellFormat getCellFormat(CellType type) {
-        WritableCellFormat writableCellFormat = null;
-        try {
-            switch (type) {
-                case TITLE:
-                    WritableFont wfcTitle = new WritableFont(WritableFont.ARIAL, 10,
-                            WritableFont.NO_BOLD,
-                            false, UnderlineStyle.NO_UNDERLINE, Colour.BLUE);
-                    writableCellFormat = new WritableCellFormat(wfcTitle);
-                    writableCellFormat.setAlignment(Alignment.LEFT);
-                    writableCellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);
-                    break;
-                case APP_NAME:
-                    WritableFont wfcApp = new WritableFont(WritableFont.ARIAL, 10,
-                            WritableFont.NO_BOLD,
-                            false, UnderlineStyle.NO_UNDERLINE, Colour.BLUE);
-                    writableCellFormat = new WritableCellFormat(wfcApp);
-                    writableCellFormat.setAlignment(Alignment.LEFT);
-                    writableCellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);
-                    break;
-                case SPECIAL:
-                    WritableFont wfcSpecial = new WritableFont(WritableFont.ARIAL, 10,
-                            WritableFont.NO_BOLD,
-                            false, UnderlineStyle.NO_UNDERLINE, Colour.BLACK);
-                    writableCellFormat = new WritableCellFormat(wfcSpecial);
-                    writableCellFormat.setAlignment(Alignment.LEFT);
-                    writableCellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);
-                    writableCellFormat.setBackground(Colour.LIME);
-                    break;
-                case NORMAL:
-                    WritableFont wfc = new WritableFont(WritableFont.ARIAL, 10,
-                            WritableFont.NO_BOLD,
-                            false, UnderlineStyle.NO_UNDERLINE, Colour.BLACK);
-                    writableCellFormat = new WritableCellFormat(wfc);
-                    writableCellFormat.setAlignment(Alignment.LEFT);
-                    writableCellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);
-                    break;
-            }
-        } catch (WriteException e) {
-            e.printStackTrace();
-            WritableFont wfc = new WritableFont(WritableFont.ARIAL, 10,
-                    WritableFont.NO_BOLD,
-                    false, UnderlineStyle.NO_UNDERLINE, Colour.BLACK);
-            writableCellFormat = new WritableCellFormat(wfc);
-        }
-        return writableCellFormat;
     }
 
     @Override

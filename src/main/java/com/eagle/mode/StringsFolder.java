@@ -17,10 +17,14 @@ import java.util.HashMap;
 
 public class StringsFolder {
 
+    private static final String TAG = StringsFolder.class.getSimpleName();
+
     private ArrayList<StringsFile> mStringsFiles;
 
     private String mPath;
     private App mApp;
+
+    private static HashMap<String, HashMap<String, Integer>> mIdsMap;
 
     public StringsFolder(String folderPath, App app) {
         mPath = folderPath;
@@ -35,11 +39,22 @@ public class StringsFolder {
         return mApp;
     }
 
+    public String getName() {
+        return new File(mPath).getName();
+    }
+
     public ArrayList<StringsFile> getStringsFiles() {
         if (mStringsFiles == null) {
             mStringsFiles = findStringsFiles();
         }
         return mStringsFiles;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(TAG).append(" : ").append(mPath);
+        return sb.toString();
     }
 
     public ArrayList<StringsFile> findStringsFiles() {
@@ -56,76 +71,40 @@ public class StringsFolder {
 
     public void parser() {
         ArrayList<StringsFile> mStringsFiles = getStringsFiles();
-        for(StringsFile stringsFile : mStringsFiles){
+        for (StringsFile stringsFile : mStringsFiles) {
             stringsFile.parser();
         }
     }
 
-    public void writeToExcel(WritableSheet sheet, int rows, boolean isEnglish,
-            HashMap<String, Integer> idsMap, StringsFile strFile) throws RowsExceededException,
+    public void writeToExcel(WritableSheet sheet, boolean isEnglish)
+            throws RowsExceededException,
             WriteException {
-
-        int currenRow = rows + 1;
-        ArrayList<StringObj> mStrs = strFile.getAllStrs();
-        int size = mStrs.size();
         HashMap<String, ConfigItem> languages = Config.getInstance().getLanguages();
-        String languageKey = strFile.getValuesFolderName();
-        if (!languages.containsKey(languageKey)) {
+        String folderName = getName();
+        if (!isEnglish && languages.size() > 0
+                && !languages.containsKey(folderName)) {
             return;
         }
-        ConfigItem item = languages.get(languageKey);
+
+        if (isEnglish) {
+            mIdsMap = new HashMap<String, HashMap<String, Integer>>();
+        }
+        ArrayList<StringsFile> stringsFiles = getStringsFiles();
+        int size = stringsFiles.size();
         for (int i = 0; i < size; i++) {
-            String[] ids = mStrs.get(i).getAllIds();
-            String[] values = mStrs.get(i).getAllValues();
-            for (int j = 0; j < ids.length; j++) {
-                if (isEnglish) {
-                    if (i == 0 && j == 0) {
-                        WritableCellFormat writableCellFormat = mApp.getCellFormat(CellType.APP_NAME);
-                        Label label = new Label(Utils.APP_NAME_COLUMN_INDEX, currenRow,
-                                strFile.getAppName(), writableCellFormat);
-                        sheet.addCell(label);
-                        writableCellFormat = mApp.getCellFormat(CellType.NORMAL);
-                        label = new Label(Utils.STRING_FILE_NAME_INDEX, currenRow,
-                                strFile.getFileName(), writableCellFormat);
-                        sheet.addCell(label);
-                    }
-                    WritableCellFormat writableCellFormat = mApp.getCellFormat(CellType.NORMAL);
-                    Label label = new Label(Utils.ID_COLUMN_INDEX, currenRow, ids[j],
-                            writableCellFormat);
-                    sheet.addCell(label);
-                    if (Utils.isContainSpecialCharacter(values[j])) {
-                        writableCellFormat = mApp.getCellFormat(CellType.SPECIAL);
-                    }
-                    label = new Label(item.getIndex(),
-                            currenRow, values[j], writableCellFormat);
-                    if (ids[j].startsWith(Utils.SURFIX_ARRAY)
-                            || ids[j].startsWith(Utils.SURFIX_PLURALS)) {
-                        ids[j] = ids[j] + j;
-                    }
-                    idsMap.put(ids[j], currenRow);
-                    sheet.addCell(label);
-                    currenRow += 1;
-                } else {
-                    if (ids[j].startsWith(Utils.SURFIX_ARRAY)
-                            || ids[j].startsWith(Utils.SURFIX_PLURALS)) {
-                        ids[j] = ids[j] + j;
-                    }
-                    if (idsMap.get(ids[j]) == null) {
-                        Utils.loge("error => " + ids[j] + " can't found in values/strings.xml");
-                        break;
-                    }
-                    WritableCellFormat writableCellFormat = null;
-                    if (Utils.isContainSpecialCharacter(values[j])) {
-                        writableCellFormat = mApp.getCellFormat(CellType.SPECIAL);
-                    } else {
-                        writableCellFormat = mApp.getCellFormat(CellType.NORMAL);
-                    }
-                    Label label = new Label(item.getIndex(),
-                            idsMap.get(ids[j]), values[j],
-                            writableCellFormat);
-                    sheet.addCell(label);
-                }
+            String fileName = stringsFiles.get(i).getFileName();
+            if (isEnglish) {
+                mIdsMap.put(fileName, new HashMap<String, Integer>());
+            }
+            int offset = i == 0 ? 0 : 2;
+            int startRowIndex = sheet.getRows() -1  + offset;
+            stringsFiles.get(i).writeToExcel(sheet, mIdsMap.get(fileName), offset);
+            int endRowIndex = sheet.getRows() - 1;
+            if (endRowIndex > startRowIndex) {
+                sheet.mergeCells(Utils.STRING_FILE_NAME_INDEX, startRowIndex,
+                        Utils.STRING_FILE_NAME_INDEX, endRowIndex);
             }
         }
+
     }
 }

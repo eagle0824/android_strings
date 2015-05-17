@@ -48,7 +48,7 @@
 
     <language>
         <item key="values" index="4">英语|en</item>
-        <item key="values-zh-rCN" index="6">中文|zh-rCN</item>
+        <item key="values-zh-rCN" index="5">中文|zh-rCN</item>
         <item key="values-ru" index="7">俄语|ru</item>
         <item key="values-el" index="8">希腊语|el</item>
         <item key="values-pl" index="9">波兰语|pl</item>

@@ -1,10 +1,18 @@
 
 package main.java.com.eagle;
 
+import jxl.format.Alignment;
+import jxl.format.Colour;
+import jxl.format.UnderlineStyle;
+import jxl.format.VerticalAlignment;
+import jxl.write.WritableCellFormat;
+import jxl.write.WritableFont;
+import jxl.write.WriteException;
 import main.java.com.eagle.config.Config;
 import main.java.com.eagle.config.Config.Command;
 import main.java.com.eagle.mode.App;
 import main.java.com.eagle.mode.StringsFile;
+import main.java.com.eagle.mode.App.CellType;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -55,11 +63,12 @@ public class Utils {
     public static final String PLURALS_MIDDLE_PREFIX = "\">\"";
     public static final String PLURALS_ITEM_SUFFIX = "\"</item>\n";
 
-    public static int APP_NAME_COLUMN_INDEX = 0;
-    public static int STRING_FILE_NAME_INDEX = 1;
-    public static int ID_COLUMN_INDEX = 2;
+    public static final int APP_NAME_COLUMN_INDEX = 0;
+    public static final int STRING_FILE_NAME_INDEX = 1;
+    public static final int ID_COLUMN_INDEX = 2;
 
     public static int LANGUAGE_ROW = 0;
+    public static int ROW_START_INDEX = 1;
     public static final String SURFIX_XLS = ".xls";
     public static final String NEW_XLS_NAME = "allstrings.xls";
     public static int SHEET0_INDEX = 0;
@@ -140,10 +149,10 @@ public class Utils {
             loge("begin create xls. Please wait ...");
             initDir(cmd.getOutputPath());
             if (file.isFile()) {
-                parserStringFiles(file);
+                parserStringFile(file);
             } else if (file.isDirectory()) {
                 ArrayList<App> allApps = findAppDirsByRoot(file, cmd.isBuildPath());
-                for(App app : allApps){
+                for (App app : allApps) {
                     app.parser();
                 }
             }
@@ -182,7 +191,7 @@ public class Utils {
                     for (String stringsPath : stringsPaths) {
                         logd("en strings.xml path : " + stringsPath);
                         StringsFile strFile = new StringsFile(stringsPath);
-                        //strFile.doParserStringsFile();
+                        // strFile.doParserStringsFile();
                         mExcelHelper.createXmlByStringsFile(strFile);
                     }
                 }
@@ -203,7 +212,7 @@ public class Utils {
         ArrayList<String> stringsFiles = new ArrayList<String>();
         ArrayList<App> apps = findAppDirsByRoot(file, buildPath);
         for (App app : apps) {
-            //stringsFiles.addAll();
+            // stringsFiles.addAll();
         }
         return stringsFiles;
     }
@@ -220,7 +229,11 @@ public class Utils {
             if (appNames.size() > 0) {
                 ArrayList<App> mRemovedApps = new ArrayList<App>();
                 for (App app : apps) {
-                    if (!appNames.contains(app.getName()) && !app.getName().equals(RES)) {
+                    if (!appNames.contains(app.getName())/*
+                                                          * &&
+                                                          * !app.getName().equals
+                                                          * (RES)
+                                                          */) {
                         mRemovedApps.add(app);
                     }
                 }
@@ -263,16 +276,14 @@ public class Utils {
         }
     }
 
-    private void parserStringFiles(File file) {
+    private void parserStringFile(File file) {
         String path = file.getAbsolutePath();
         if (file.isFile()) {
             ArrayList<String> defaultStringsNames = Config.getInstance().getStringFiles();
-            for (String defaultStringsName : defaultStringsNames) {
-                if (path.endsWith(defaultStringsName)) {
-                    StringsFile stringsFile = new StringsFile(path);
-                    stringsFile.parser();
-                    stringsFile.writeToExcel();
-                }
+            if (defaultStringsNames.contains(file.getName())) {
+                StringsFile stringsFile = new StringsFile(path);
+                stringsFile.parser();
+                stringsFile.writeToExcel();
             }
         } else {
             loge(path + " is not file path!");
@@ -458,6 +469,59 @@ public class Utils {
             return line.substring(1, length - 1);
         }
         return line;
+    }
+
+    /*
+     * getCellFormat
+     * @param type
+     * @return null or WritableCellFormat
+     */
+    public WritableCellFormat getCellFormat(CellType type) {
+        WritableCellFormat writableCellFormat = null;
+        try {
+            switch (type) {
+                case TITLE:
+                    WritableFont wfcTitle = new WritableFont(WritableFont.ARIAL, 10,
+                            WritableFont.NO_BOLD,
+                            false, UnderlineStyle.NO_UNDERLINE, Colour.BLUE);
+                    writableCellFormat = new WritableCellFormat(wfcTitle);
+                    writableCellFormat.setAlignment(Alignment.LEFT);
+                    writableCellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);
+                    break;
+                case APP_NAME:
+                    WritableFont wfcApp = new WritableFont(WritableFont.ARIAL, 10,
+                            WritableFont.NO_BOLD,
+                            false, UnderlineStyle.NO_UNDERLINE, Colour.BLUE);
+                    writableCellFormat = new WritableCellFormat(wfcApp);
+                    writableCellFormat.setAlignment(Alignment.LEFT);
+                    writableCellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);
+                    break;
+                case SPECIAL:
+                    WritableFont wfcSpecial = new WritableFont(WritableFont.ARIAL, 10,
+                            WritableFont.NO_BOLD,
+                            false, UnderlineStyle.NO_UNDERLINE, Colour.BLACK);
+                    writableCellFormat = new WritableCellFormat(wfcSpecial);
+                    writableCellFormat.setAlignment(Alignment.LEFT);
+                    writableCellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);
+                    writableCellFormat.setBackground(Colour.LIME);
+                    break;
+                case NORMAL:
+                    WritableFont wfc = new WritableFont(WritableFont.ARIAL, 10,
+                            WritableFont.NO_BOLD,
+                            false, UnderlineStyle.NO_UNDERLINE, Colour.BLACK);
+                    writableCellFormat = new WritableCellFormat(wfc);
+                    writableCellFormat.setAlignment(Alignment.LEFT);
+                    writableCellFormat.setVerticalAlignment(VerticalAlignment.CENTRE);
+                    break;
+            }
+        } catch (WriteException e) {
+            e.printStackTrace();
+            WritableFont wfc = new WritableFont(WritableFont.ARIAL, 10,
+                    WritableFont.NO_BOLD,
+                    false, UnderlineStyle.NO_UNDERLINE, Colour.BLACK);
+            writableCellFormat = new WritableCellFormat(wfc);
+        }
+        return writableCellFormat;
     }
 
     public static void printHelp() {
