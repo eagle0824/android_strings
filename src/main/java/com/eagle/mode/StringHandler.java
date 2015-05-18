@@ -22,14 +22,12 @@ public class StringHandler extends DefaultHandler {
     private boolean isItemHasAttr = false;
     private String pluralsKey = null;
     private boolean mIncludeNotTranslate = false;
-    private StringsFolder mFolder;
     private StringsFile mStrFile;
 
-    public StringHandler(StringsFile strFile, StringsFolder folder) {
+    public StringHandler(StringsFile strFile) {
         mStrFile = strFile;
         mStrObjs = new ArrayList<StringObj>();
         mIncludeNotTranslate = Config.getInstance().getCommand().isIncludeNotTranslate();
-        mFolder = folder;
     }
 
     @Override

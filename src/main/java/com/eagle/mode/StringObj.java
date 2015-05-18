@@ -1,4 +1,6 @@
+
 package main.java.com.eagle.mode;
+
 import main.java.com.eagle.Utils;
 
 import java.util.Arrays;
@@ -26,7 +28,7 @@ public class StringObj {
     public FormatResult getXMLFormatStr(String[] values) {
         boolean isError = false;
         StringBuilder sb = new StringBuilder();
-        if (values == null || values.length != 1 ) {
+        if (values == null || values.length != 1) {
             isError = true;
             sb.append("id is : ")
                     .append(mId);
@@ -52,5 +54,16 @@ public class StringObj {
         StringBuilder sb = new StringBuilder();
         sb.append(mId).append(Utils.SEPERATOR).append(mValue).append(Utils.NEWLINE);
         return sb.toString();
+    }
+
+    public class FormatResult {
+
+        public boolean mIsError = false;
+        public String mXmlString = "";
+
+        public FormatResult(boolean isError, String xmlString) {
+            mIsError = isError;
+            mXmlString = xmlString;
+        }
     }
 }

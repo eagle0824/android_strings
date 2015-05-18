@@ -1,15 +1,12 @@
 
 package main.java.com.eagle.mode;
 
-import jxl.write.Label;
-import jxl.write.WritableCellFormat;
 import jxl.write.WritableSheet;
 import jxl.write.WriteException;
 import jxl.write.biff.RowsExceededException;
 import main.java.com.eagle.Utils;
 import main.java.com.eagle.config.Config;
 import main.java.com.eagle.config.ConfigItem;
-import main.java.com.eagle.mode.App.CellType;
 
 import java.io.File;
 import java.util.ArrayList;

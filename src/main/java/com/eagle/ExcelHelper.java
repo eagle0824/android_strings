@@ -6,8 +6,8 @@ import jxl.Sheet;
 import jxl.Workbook;
 import jxl.WorkbookSettings;
 import jxl.read.biff.BiffException;
-import main.java.com.eagle.mode.FormatResult;
 import main.java.com.eagle.mode.StringObj;
+import main.java.com.eagle.mode.StringObj.FormatResult;
 import main.java.com.eagle.mode.StringsFile;
 
 import java.io.File;
@@ -21,7 +21,7 @@ public class ExcelHelper {
 
     private HashMap<String, Integer> mIndex;
     private ArrayList<String> mLanguages;
-    private ArrayList<App> mApps;
+    private ArrayList<AppExcel> mApps;
 
     private int start = -1;
     private int end = -1;
@@ -31,7 +31,7 @@ public class ExcelHelper {
     public ExcelHelper(String outputDir) {
         mIndex = new HashMap<String, Integer>();
         mLanguages = new ArrayList<String>();
-        mApps = new ArrayList<App>();
+        mApps = new ArrayList<AppExcel>();
         mOutputDir = outputDir;
         Utils.initDir(outputDir);
     }
@@ -42,7 +42,7 @@ public class ExcelHelper {
         this.end = end;
     }
 
-    public void createXmlFromXlsFile(File xlsFile) {
+    public void createXmlsFromXlsFile(File xlsFile) {
         Workbook wb = null;
         try {
             WorkbookSettings workbookSettings = new WorkbookSettings();
@@ -62,7 +62,7 @@ public class ExcelHelper {
             for (int i = 0; i < len; i++) {
                 Sheet sheet = sheets[i];// get sheet i
                 int rows = sheet.getRows();
-                App app = null;
+                AppExcel app = null;
                 int rowStart = start > 1 ? start : 1;
                 if (rows < 1) {
                     Utils.loge("row count is zero !");
@@ -76,11 +76,11 @@ public class ExcelHelper {
                         + rowStart
                         + " to : " + rowEnd);
                 if (rowStart != 1) {
-                    initLanguages(sheet);
+                    readLanguages(sheet);
                 }
                 for (int j = rowStart - 1; j < rowEnd; j++) {
                     if (j == 0) {
-                        initLanguages(sheet);
+                        readLanguages(sheet);
                         continue;
                     }
                     // every record
@@ -125,7 +125,7 @@ public class ExcelHelper {
                                     app = null;
                                     // Utils.logd(app.toString());
                                 }
-                                app = new App(getAppName(content));
+                                app = new AppExcel(getAppName(content));
                                 // Utils.logd("reading " + app.getAppName());
                             }
                             record.addItem(content);
@@ -153,19 +153,130 @@ public class ExcelHelper {
         // dumpApps();
     }
 
-    public void createXmlByStringsFile(StringsFile enStr) {
-        String name = enStr.getAppName();
-        ArrayList<String> ids = enStr.getAllIds();
+    public void createXmlFromXlsFile(File xlsFile) {
+        Workbook wb = null;
+        try {
+            WorkbookSettings workbookSettings = new WorkbookSettings();
+            workbookSettings.setEncoding(Utils.ISO_8859_1);
+            wb = Workbook.getWorkbook(xlsFile, workbookSettings);
+        } catch (BiffException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (wb != null) {
+            emptyRowCount = 0;
+            Sheet[] sheets = wb.getSheets();
+            int len = sheets.length;// sheet count
+            Utils.logd("sheet size : " + len);
+            for (int i = 0; i < len; i++) {
+                Sheet sheet = sheets[i];// get sheet i
+                int rows = sheet.getRows();
+                int rowStart = start > Utils.ROW_START_INDEX ? start : Utils.ROW_START_INDEX;
+                if (rows < 1) {
+                    Utils.loge("row count is zero !");
+                    return;
+                }
+                int rowEnd = rows;
+                if (end > 1) {
+                    rowEnd = Math.min(rows, end);
+                }
+                Utils.logd("sheet : " + i + " total rows is : " + rows + " read row form : "
+                        + rowStart
+                        + " to : " + rowEnd);
+                readLanguages(sheet);
+
+                AppExcel app = null;
+                for (int j = rowStart; j < rowEnd; j++) {
+                    Record record = new Record(j + 1);
+                    Cell[] cells = sheet.getRow(j);
+                    if (cells != null && cells.length > 0) {
+                        StringBuilder sb = new StringBuilder();
+                        for (int k = 0; k < cells.length; k++) {
+                            String content = cells[k].getContents();
+                            content = Utils.removeBlankAndQutation(content);
+                            // switch (k) {
+                            // case Utils.ID_COLUMN_INDEX: {
+                            // Utils.logd("id : " + content.trim());
+                            // }
+                            // break;
+                            // case Utils.APP_NAME_COLUMN_INDEX: {
+                            // Utils.logd("app name : " + content.trim());
+                            //
+                            // }
+                            // break;
+                            // case Utils.STRING_FILE_NAME_INDEX: {
+                            // Utils.logd("string name : " + content.trim());
+                            // }
+                            // break;
+                            // default:
+                            // break;
+                            // }
+                            if (k == Utils.ID_COLUMN_INDEX && content.trim() == "") {
+                                record = null;
+                                emptyRowCount++;
+                                if (app != null) {
+                                    app.writeToFile();
+                                    mApps.add(app);
+                                    app = null;
+                                }
+                                break;
+                            }
+                            if (k == Utils.APP_NAME_COLUMN_INDEX && content.trim() != "") {
+                                if (app != null) {
+                                    app.writeToFile();
+                                    mApps.add(app);
+                                    app = null;
+                                    // Utils.logd(app.toString());
+                                }
+                                app = new AppExcel(getAppName(content));
+                                // Utils.logd("reading " + app.getAppName());
+                            }
+                            if (k == Utils.STRING_FILE_NAME_INDEX && content.trim() != "") {
+                                String fileName = content.trim();
+                                if (app != null) {
+                                    app.addStringsFileName(fileName);
+                                }
+                            }
+                            record.addItem(content);
+                            sb.append(content).append("|");
+                        }
+                        if (record != null) {
+                            //Utils.logd(record.toString());
+                        }
+                        if (app != null && record != null) {
+                            app.add(record);
+                        }
+                    }
+                    if (j == rowEnd - 1 && app != null) {
+                        app.writeToFile();
+                        mApps.add(app);
+                    }
+                }
+                int totalLine = (start == Utils.ROW_START_INDEX ? (rowEnd - rowStart) : (rowEnd
+                        - rowStart + Utils.ROW_START_INDEX));
+                Utils.logd("total line is : " + totalLine + " allRecord count : "
+                        + getAllReordCount()
+                        + " empty count is : " + emptyRowCount);
+            }
+            wb.close();
+        }
+        // dumpApps();
+    }
+
+    public void createXmlByStringsFile(StringsFile enStringsFile) {
+        String name = enStringsFile.getAppName();
+        ArrayList<String> ids = enStringsFile.getAllIds();
         if (ids.size() == 0) {
             Utils.loge("ids is null please ensure your string.xml has string record!");
             return;
         }
-        App app = findAppByName(name);
+        AppExcel app = findAppByName(name);
         if (app == null) {
             Utils.loge("app " + name + " can't find from xls,please check the xls name is right!");
             return;
         }
-        app.writeToFile(enStr, mOutputDir);
+        app.writeToFile(enStringsFile, mOutputDir);
     }
 
     private int getAllReordCount() {
@@ -216,10 +327,10 @@ public class ExcelHelper {
     /*
      * init xml row 0 to language name param:sheet xml sheet object
      */
-    private void initLanguages(Sheet sheet) {
+    private void readLanguages(Sheet sheet) {
         mIndex.clear();
         mLanguages.clear();
-        Cell[] cells = sheet.getRow(0);
+        Cell[] cells = sheet.getRow(Utils.LANGUAGE_ROW);
         if (cells != null && cells.length > 0) {
             for (int k = 0; k < cells.length; k++) {
                 String content = cells[k].getContents();
@@ -232,12 +343,12 @@ public class ExcelHelper {
                 }
             }
         } else {
-            Utils.loge("init language failed!");
+            Utils.loge("read Languages failed!");
         }
         // dumpLanguages();
     }
 
-    private App findAppByName(String name) {
+    private AppExcel findAppByName(String name) {
         int size = mApps.size();
         for (int i = 0; i < size; i++) {
             if (mApps.get(i).getAppName().equals(name)) {
@@ -247,14 +358,20 @@ public class ExcelHelper {
         return null;
     }
 
-    public class App {
+    public class AppExcel {
         private String mAppName;
         private ArrayList<Record> mRecords;
+        private ArrayList<String> mStringsFiles;
 
-        public App(String appName) {
+        public AppExcel(String appName) {
             // Utils.logd("App construct appName:" + appName);
             mAppName = appName;
             mRecords = new ArrayList<Record>();
+            mStringsFiles = new ArrayList<String>();
+        }
+
+        public void addStringsFileName(String name) {
+            mStringsFiles.add(name);
         }
 
         public void setAppName(String name) {
@@ -266,16 +383,14 @@ public class ExcelHelper {
         }
 
         public void add(Record record) {
-            // Utils.logd("appName: " + mAppName + " addRecord:\n" +
-            // record.toString());
-            mRecords.add(record);
-        }
-
-        public Record getRecordByIndex(int index) {
-            if (index >= mRecords.size() || index < 0) {
-                return null;
+            String name = mStringsFiles.get(mStringsFiles.size() - 1);
+            if (Utils.isEmpty(name)) {
+                name = Utils.STRING_FILE_NAME;
             }
-            return mRecords.get(index);
+            record.setStringsFileName(name);
+//            Utils.logd("appName: " + mAppName + " string name : " + name  + " addRecord:\n" +
+//                    record.toString());
+            mRecords.add(record);
         }
 
         public int getRecordCount() {
@@ -328,7 +443,7 @@ public class ExcelHelper {
             return sb.toString();
         }
 
-        public void writeToFile(StringsFile appStr, String path) {
+        public void writeToFile(StringsFile stringsFile, String path) {
             Utils.loge("write App " + mAppName + " to dir " + mOutputDir + " record count : "
                     + getRecordCount());
             File appFile = new File(path, mAppName);
@@ -348,12 +463,12 @@ public class ExcelHelper {
                 try {
                     OutputStreamWriter out =
                             new OutputStreamWriter(new FileOutputStream(new File(fileValue,
-                                    appStr.getFileName())), Utils.UTF_8);
+                                    stringsFile.getFileName())), Utils.UTF_8);
                     File errorFile = new File(fileValue, Utils.ERROR_FILE);
                     OutputStreamWriter error =
                             new OutputStreamWriter(new FileOutputStream(errorFile), Utils.UTF_8);
                     out.write(Utils.STRING_HEAD);
-                    ArrayList<StringObj> mStrs = appStr.getAllStrs();
+                    ArrayList<StringObj> mStrs = stringsFile.getAllStrs();
                     int size = mStrs.size();
                     boolean hasError = false;
                     for (int j = 0; j < size; j++) {
@@ -540,6 +655,7 @@ public class ExcelHelper {
 
         private ArrayList<String> mItems;
         private int mLine;
+        private String mStringsFileName;
 
         public Record(int line) {
             mLine = line;
@@ -565,13 +681,22 @@ public class ExcelHelper {
             return getItemByIndex(Utils.ID_COLUMN_INDEX);
         }
 
+        public void setStringsFileName(String name) {
+            mStringsFileName = name;
+        }
+
+        public String getStringsFileName() {
+            return mStringsFileName;
+        }
+
         @Override
         public String toString() {
             StringBuilder sb = new StringBuilder();
             int count = getColumnCount();
             sb.append("Record ")
-                    .append("column count : " + count).append(" ")
-                    .append("line number : " + mLine + " : ");
+                    .append(" file name : " + mStringsFileName)
+                    .append(" column count : " + count).append(" ")
+                    .append(" line number : " + mLine + " : ");
             for (int i = 0; i < count; i++) {
                 sb.append(Utils.SEPERATOR).append(mItems.get(i));
             }

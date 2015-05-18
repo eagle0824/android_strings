@@ -152,11 +152,16 @@ public class Utils {
                 parserStringFile(file);
             } else if (file.isDirectory()) {
                 ArrayList<App> allApps = findAppDirsByRoot(file, cmd.isBuildPath());
-                for (App app : allApps) {
-                    app.parser();
+                if(allApps.size() > 0){
+                    for (App app : allApps) {
+                        Utils.logd("app : " + app.getName());
+                        app.parser();
+                    }
+                    loge(String.format("create %s/%s successful!", cmd.getOutputPath(), XLS_FILE_NAME));
+                } else {
+                    loge("not found apps on path : " + file.getAbsolutePath());
                 }
             }
-            loge(String.format("create %s/%s successful!", cmd.getOutputPath(), XLS_FILE_NAME));
         } else {
             loge("create xls failed, because " + file.getPath() + " not exist!");
             return;
@@ -180,7 +185,7 @@ public class Utils {
             File file = new File(fileUri);
             if (file.exists()) {
                 ArrayList<String> stringsPaths = new ArrayList<String>();
-                loge("find en strings.xml file.Please wait ...");
+                loge("finding en strings.xml file.Please wait ...");
                 stringsPaths = findEnStringsFilesByRoot(file, cmd.isBuildPath());
                 int size = stringsPaths.size();
                 loge("find en strings.xml file finished! size : " + size);
@@ -191,7 +196,7 @@ public class Utils {
                     for (String stringsPath : stringsPaths) {
                         logd("en strings.xml path : " + stringsPath);
                         StringsFile strFile = new StringsFile(stringsPath);
-                        // strFile.doParserStringsFile();
+                        strFile.parser();
                         mExcelHelper.createXmlByStringsFile(strFile);
                     }
                 }

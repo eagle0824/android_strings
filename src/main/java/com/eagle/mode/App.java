@@ -66,7 +66,6 @@ public class App {
     public App(String name, String path) {
         mPath = path;
         mName = Utils.getAppName(mPath);
-        // mStringsContainers = new HashMap<String, ArrayList<StringsFile>>();
     }
 
     public void parser() {
@@ -185,7 +184,8 @@ public class App {
             }
             Utils.logd("app" + getName() + " rows : " + sheet.getRows() + " start : "
                     + Utils.ROW_START_INDEX);
-            startRowIndex = sheet.getRows() - 1 > Utils.ROW_START_INDEX ? sheet.getRows() - 1
+
+            startRowIndex = sheet.getRows() > Utils.ROW_START_INDEX ? sheet.getRows()
                     : Utils.ROW_START_INDEX;
             startRowIndex++;
 
@@ -270,5 +270,4 @@ public class App {
         sBuilder.append("path : ").append(getPath());
         return sBuilder.toString();
     }
-
 }
