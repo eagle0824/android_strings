@@ -11,15 +11,14 @@ import jxl.write.WriteException;
 import main.java.com.eagle.config.Config;
 import main.java.com.eagle.config.Config.Command;
 import main.java.com.eagle.mode.App;
-import main.java.com.eagle.mode.StringsFile;
 import main.java.com.eagle.mode.App.CellType;
+import main.java.com.eagle.mode.ExcelApp;
+import main.java.com.eagle.mode.StringsFile;
 
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -147,17 +146,19 @@ public class Utils {
         File file = new File(fileUri);
         if (file.exists()) {
             loge("begin create xls. Please wait ...");
-            initDir(cmd.getOutputPath());
+            FileHelper mFileHelper = FileHelper.getInstance();
             if (file.isFile()) {
                 parserStringFile(file);
             } else if (file.isDirectory()) {
                 ArrayList<App> allApps = findAppDirsByRoot(file, cmd.isBuildPath());
-                if(allApps.size() > 0){
+                if (allApps.size() > 0) {
                     for (App app : allApps) {
                         Utils.logd("app : " + app.getName());
                         app.parser();
+                        mFileHelper.writeAppToExcel(app);
                     }
-                    loge(String.format("create %s/%s successful!", cmd.getOutputPath(), XLS_FILE_NAME));
+                    loge(String.format("create %s/%s successful!", cmd.getOutputPath(),
+                            XLS_FILE_NAME));
                 } else {
                     loge("not found apps on path : " + file.getAbsolutePath());
                 }
@@ -176,6 +177,7 @@ public class Utils {
                     cmd.getXlsPath()));
             return;
         }
+        FileHelper excelHelper = FileHelper.getInstance();
         if (cmd.isReadEnStringId()) {
             String fileUri = cmd.getSourcePath();
             if (isEmpty(fileUri)) {
@@ -184,20 +186,15 @@ public class Utils {
             }
             File file = new File(fileUri);
             if (file.exists()) {
-                ArrayList<String> stringsPaths = new ArrayList<String>();
-                loge("finding en strings.xml file.Please wait ...");
-                stringsPaths = findEnStringsFilesByRoot(file, cmd.isBuildPath());
-                int size = stringsPaths.size();
-                loge("find en strings.xml file finished! size : " + size);
-                if (size > 0) {
-                    ExcelHelper mExcelHelper = new
-                            ExcelHelper(cmd.getOutputPath());
-                    mExcelHelper.createXmlFromXlsFile(xlsFile);
-                    for (String stringsPath : stringsPaths) {
-                        logd("en strings.xml path : " + stringsPath);
-                        StringsFile strFile = new StringsFile(stringsPath);
-                        strFile.parser();
-                        mExcelHelper.createXmlByStringsFile(strFile);
+                ArrayList<App> mApps = findAppDirsByRoot(file, cmd.isBuildPath());
+                if (mApps.size() > 0) {
+                    excelHelper.readXlsFile(xlsFile);
+                    for (App app : mApps) {
+                        ExcelApp excelApp = excelHelper.getExcelAppByName(app.getName());
+                        if (excelApp != null) {
+                            app.parser(Utils.VALUES);
+                            excelHelper.createXmlByApp(excelApp, app);
+                        }
                     }
                 }
             } else {
@@ -207,19 +204,9 @@ public class Utils {
         } else {
             loge(String.format("read xls file from dir %s", cmd.getXlsPath()));
             loge("begin create strings.xml...");
-            ExcelHelper mExcelHelper = new ExcelHelper(cmd.getOutputPath());
-            mExcelHelper.createXmlFromXlsFile(xlsFile);
+            excelHelper.createXmlsFromXlsFile(xlsFile);
             loge("finished create strings.xml on dir " + cmd.getOutputPath());
         }
-    }
-
-    private ArrayList<String> findEnStringsFilesByRoot(File file, boolean buildPath) {
-        ArrayList<String> stringsFiles = new ArrayList<String>();
-        ArrayList<App> apps = findAppDirsByRoot(file, buildPath);
-        for (App app : apps) {
-            // stringsFiles.addAll();
-        }
-        return stringsFiles;
     }
 
     private ArrayList<App> findAppDirsByRoot(File file, boolean buildPath) {
@@ -288,7 +275,7 @@ public class Utils {
             if (defaultStringsNames.contains(file.getName())) {
                 StringsFile stringsFile = new StringsFile(path);
                 stringsFile.parser();
-                stringsFile.writeToExcel();
+                FileHelper.getInstance().writeSingalStringsFileToExcel(stringsFile);
             }
         } else {
             loge(path + " is not file path!");

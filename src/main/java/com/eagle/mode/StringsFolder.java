@@ -1,16 +1,10 @@
 
 package main.java.com.eagle.mode;
 
-import jxl.write.WritableSheet;
-import jxl.write.WriteException;
-import jxl.write.biff.RowsExceededException;
-import main.java.com.eagle.Utils;
 import main.java.com.eagle.config.Config;
-import main.java.com.eagle.config.ConfigItem;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class StringsFolder {
 
@@ -20,8 +14,6 @@ public class StringsFolder {
 
     private String mPath;
     private App mApp;
-
-    private static HashMap<String, HashMap<String, Integer>> mIdsMap;
 
     public StringsFolder(String folderPath, App app) {
         mPath = folderPath;
@@ -45,6 +37,16 @@ public class StringsFolder {
             mStringsFiles = findStringsFiles();
         }
         return mStringsFiles;
+    }
+
+    public StringsFile getStringFileByName(String fileName) {
+        ArrayList<StringsFile> stringFiles = getStringsFiles();
+        for (StringsFile stringsFile : stringFiles) {
+            if (stringsFile.getFileName().equals(fileName)) {
+                return stringsFile;
+            }
+        }
+        return null;
     }
 
     @Override
@@ -71,37 +73,5 @@ public class StringsFolder {
         for (StringsFile stringsFile : mStringsFiles) {
             stringsFile.parser();
         }
-    }
-
-    public void writeToExcel(WritableSheet sheet, boolean isEnglish)
-            throws RowsExceededException,
-            WriteException {
-        HashMap<String, ConfigItem> languages = Config.getInstance().getLanguages();
-        String folderName = getName();
-        if (!isEnglish && languages.size() > 0
-                && !languages.containsKey(folderName)) {
-            return;
-        }
-
-        if (isEnglish) {
-            mIdsMap = new HashMap<String, HashMap<String, Integer>>();
-        }
-        ArrayList<StringsFile> stringsFiles = getStringsFiles();
-        int size = stringsFiles.size();
-        for (int i = 0; i < size; i++) {
-            String fileName = stringsFiles.get(i).getFileName();
-            if (isEnglish) {
-                mIdsMap.put(fileName, new HashMap<String, Integer>());
-            }
-            int offset = i == 0 ? 0 : 2;
-            int startRowIndex = sheet.getRows() -1  + offset;
-            stringsFiles.get(i).writeToExcel(sheet, mIdsMap.get(fileName), offset);
-            int endRowIndex = sheet.getRows() - 1;
-            if (endRowIndex > startRowIndex) {
-                sheet.mergeCells(Utils.STRING_FILE_NAME_INDEX, startRowIndex,
-                        Utils.STRING_FILE_NAME_INDEX, endRowIndex);
-            }
-        }
-
     }
 }
