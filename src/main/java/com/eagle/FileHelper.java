@@ -15,10 +15,10 @@ import jxl.write.biff.RowsExceededException;
 import main.java.com.eagle.config.Config;
 import main.java.com.eagle.config.ConfigItem;
 import main.java.com.eagle.mode.App;
+import main.java.com.eagle.mode.App.CellType;
 import main.java.com.eagle.mode.ExcelApp;
 import main.java.com.eagle.mode.ExcelRecord;
 import main.java.com.eagle.mode.StringObj;
-import main.java.com.eagle.mode.App.CellType;
 import main.java.com.eagle.mode.StringObj.FormatResult;
 import main.java.com.eagle.mode.StringsFile;
 import main.java.com.eagle.mode.StringsFolder;
@@ -329,7 +329,8 @@ public class FileHelper {
         WritableSheet sheet = null;
         Workbook rwb = null;
         String savePath = Config.getInstance().getCommand().getOutputPath();
-        File xlsFile = new File(savePath, Utils.XLS_FILE_NAME);
+        String xlsFileName = stringsFile.getFileName().replace(Utils.SURFIX_XML, Utils.SURFIX_XLS);
+        File xlsFile = new File(savePath, xlsFileName);
         Utils.logd("write package StringFile " + " to excel path : " + xlsFile.getAbsolutePath());
         try {
             if (!xlsFile.exists()) {
@@ -342,6 +343,10 @@ public class FileHelper {
             }
             int currenRow = sheet.getRows();
             Label label = new Label(0, currenRow, stringsFile.getPath());
+            sheet.addCell(label);
+            label = new Label(Utils.ID_COLUMN_INDEX, currenRow, "ID");
+            sheet.addCell(label);
+            label = new Label(Utils.ID_COLUMN_INDEX + 1, currenRow, "value");
             sheet.addCell(label);
             currenRow += 1;
             ArrayList<StringObj> mStrs = stringsFile.getAllStrs();
@@ -651,7 +656,7 @@ public class FileHelper {
         if (langs.length == 2 && langs[1] != "") {
             return langs[1];
         } else {
-            Utils.loge("language :" + content + "no language abbr!");
+            Utils.loge("can't got language name on title, value is  " + content);
             return "";
         }
     }

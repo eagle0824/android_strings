@@ -45,7 +45,6 @@ public class Utils {
     public static final String XLS_PATH = "xls";
     public static final String XML_PATH = "xml";
     public static final String XML_RW_PATH = "rwxml";
-    public static final String XLS_FILE_NAME = "StringFile.xls";
 
     public static final String STRING_ARRAY_HEAD_PREFIX = "    <string-array name=\"";
     public static final String STRING_ARRAY_HEAD_SURFIX = "\">\n";
@@ -68,6 +67,7 @@ public class Utils {
 
     public static int LANGUAGE_ROW = 0;
     public static int ROW_START_INDEX = 1;
+    public static final String SURFIX_XML = ".xml";
     public static final String SURFIX_XLS = ".xls";
     public static final String NEW_XLS_NAME = "allstrings.xls";
     public static int SHEET0_INDEX = 0;
@@ -76,10 +76,6 @@ public class Utils {
     public static final char TAB = '\t';
     public static final char NEWLINE_REPLACE_CHAR = '*';
     public static final char NEWLINE_REPLACE_TAB = '@';
-
-    public static final String COMMAND_CREATE_XLS = "cxls";
-    public static final String COMMAND_CREATE_XML = "cxml";
-    public static final String COMMAND_READ_CREATE_XML = "rcxml";
 
     public static final String SURFIX_ARRAY = "-array-";
     public static final String SURFIX_PLURALS = "-plurals-";
@@ -107,21 +103,28 @@ public class Utils {
 
     public void parserArgs(String[] args) {
         Utils.logd(Arrays.toString(args));
+        boolean help = false;
         int len = args.length;
-        if (len > 0) {
-            if (len == 1 && args[0].equals("-h")) {
-                printHelp();
-            } else {
-                Config config = Config.getInstance();
-                Config.Command cmd = config.parserCommand(args);
-                if (cmd == null) {
-                    printHelp();
-                } else {
-                    cmd.dumpCommand();
-                    doCommand(cmd);
+        if (len == 0) {
+            help = true;
+        } else {
+            for (String arg : args) {
+                if (arg.equals("-h")) {
+                    help = true;
                 }
             }
-        } else {
+        }
+        if (!help) {
+            Config config = Config.getInstance();
+            Config.Command cmd = config.parserCommand(args);
+            if (cmd == null) {
+                help = true;
+            } else {
+                cmd.dumpCommand();
+                doCommand(cmd);
+            }
+        }
+        if (help) {
             printHelp();
         }
     }
@@ -148,7 +151,14 @@ public class Utils {
             loge("begin create xls. Please wait ...");
             FileHelper mFileHelper = FileHelper.getInstance();
             if (file.isFile()) {
-                parserStringFile(file);
+                ArrayList<String> defaultStringsNames = Config.getInstance().getStringFiles();
+                if (defaultStringsNames.contains(file.getName())) {
+                    StringsFile stringsFile = new StringsFile(file.getPath());
+                    stringsFile.parser();
+                    mFileHelper.writeSingalStringsFileToExcel(stringsFile);
+                    loge(String.format("create %s/%s successful!", cmd.getOutputPath(),
+                            stringsFile.getFileName().replace(Utils.SURFIX_XML, Utils.SURFIX_XLS)));
+                }
             } else if (file.isDirectory()) {
                 ArrayList<App> allApps = findAppDirsByRoot(file, cmd.isBuildPath());
                 if (allApps.size() > 0) {
@@ -158,7 +168,7 @@ public class Utils {
                         mFileHelper.writeAppToExcel(app);
                     }
                     loge(String.format("create %s/%s successful!", cmd.getOutputPath(),
-                            XLS_FILE_NAME));
+                            NEW_XLS_NAME));
                 } else {
                     loge("not found apps on path : " + file.getAbsolutePath());
                 }
@@ -221,11 +231,7 @@ public class Utils {
             if (appNames.size() > 0) {
                 ArrayList<App> mRemovedApps = new ArrayList<App>();
                 for (App app : apps) {
-                    if (!appNames.contains(app.getName())/*
-                                                          * &&
-                                                          * !app.getName().equals
-                                                          * (RES)
-                                                          */) {
+                    if (!appNames.contains(app.getName())) {
                         mRemovedApps.add(app);
                     }
                 }
@@ -269,17 +275,7 @@ public class Utils {
     }
 
     private void parserStringFile(File file) {
-        String path = file.getAbsolutePath();
-        if (file.isFile()) {
-            ArrayList<String> defaultStringsNames = Config.getInstance().getStringFiles();
-            if (defaultStringsNames.contains(file.getName())) {
-                StringsFile stringsFile = new StringsFile(path);
-                stringsFile.parser();
-                FileHelper.getInstance().writeSingalStringsFileToExcel(stringsFile);
-            }
-        } else {
-            loge(path + " is not file path!");
-        }
+
     }
 
     public static Utils getInstance() {
